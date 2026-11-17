@@ -148,7 +148,17 @@ Idempotency: the Drive file ID is the natural key. Re-running ingestion over the
 
 ### 6.3 Missing run detection
 
-For every active agent, the health module expands the agent's cron expression over the last 14 days, applies a grace window (default 3 hours), and matches each expected slot to an ingested run. Unmatched slots are shown as `missing`. Runs with status `failed` or a failed verification are shown as `failed`.
+For every active agent, the health module expands the agent's cron expression over the last 14 days, applies a grace window (default 3 hours), and matches each expected slot to an ingested run. Unmatched slots are shown as `missing`. Runs with status `failed` or a failed verification (`verification.result` is `issues`) are shown as `failed`.
+
+Details:
+
+- The schedule's `CRON_TZ=` prefix sets the timezone, so slots follow daylight saving time. Without a prefix, `APP_TIMEZONE` applies.
+- A run matches a slot when it starts between 15 minutes before the slot and the end of the grace window. Each run fills one slot, earliest open slot first.
+- A slot whose grace window has not ended yet and has no run is `pending`, not `missing`. With the default grace window, a skipped run shows as `missing` 3 hours after its slot.
+- Slots before the agent was registered are not expected.
+- Runs that match no slot, such as a manual run, are listed as unscheduled.
+- The agent's status is the status of its most recent due slot.
+- An invalid schedule is reported as `invalid_schedule` for that agent; it does not break health for the other agents.
 
 ## 7. Deployment
 
