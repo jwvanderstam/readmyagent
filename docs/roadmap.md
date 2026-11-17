@@ -2,12 +2,12 @@
 
 Phases are gated: a phase starts only when the exit criteria of the previous one are met.
 
-## Phase 0: Foundations (current)
+## Phase 0: Foundations (done)
 
 - Architecture, ADRs, agent contract with JSON Schemas, data model, standards, security model.
 - Exit: documents reviewed and accepted by the owner.
 
-## Phase 1: Agent loop MVP
+## Phase 1: Agent loop MVP (current)
 
 Scope:
 - Next.js scaffold, CI (lint, typecheck, test), Vercel and Neon wired, Auth.js with owner allowlist, security headers.
