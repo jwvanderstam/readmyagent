@@ -1,6 +1,8 @@
 # Data model
 
-Postgres on Neon, managed with Drizzle ORM. Migrations live in `drizzle/` and are generated, reviewed and committed; the database is never changed by hand.
+Postgres on Neon, managed with Drizzle ORM. The schema is defined in `lib/db/schema.ts`. Migrations live in `drizzle/` and are generated with `pnpm db:generate`, reviewed and committed; the database is never changed by hand. CI fails when the schema changes without a committed migration.
+
+Drivers: production uses the Neon serverless driver over WebSockets (`lib/db/client.ts`), which supports the interactive transactions ingestion needs. Tests run the committed migrations on PGlite, an in-process Postgres, so CI needs no database or credentials.
 
 ## 1. Ownership
 
@@ -90,7 +92,9 @@ Unique: `(agent_slug, fingerprint)`. A link table `item_occurrences (item_id, ru
 
 `sync_runs`: `id`, `trigger` (`cron`, `manual`, `on_open`), `started_at`, `finished_at`, `status` (`running`, `ok`, `partial`, `failed`), `files_seen`, `runs_ingested`, `errors`.
 
-`ingest_errors`: `id`, `sync_run_id`, `drive_file_id`, `file_name`, `message`, `resolved_at`.
+The sync lock is enforced by the database: a partial unique index (`sync_runs_single_running_idx`) allows at most one row with status `running`. A stale lock (older than 10 minutes) is closed by the next sync before it starts its own.
+
+`ingest_errors`: `id`, `sync_run_id`, `drive_file_id`, `file_name`, `message`, `created_at`, `resolved_at`.
 
 ## 3. State machines
 
