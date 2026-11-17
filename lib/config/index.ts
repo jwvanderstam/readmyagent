@@ -1,7 +1,13 @@
 import "server-only";
 import { type AppConfig, type ConfigResult, validateConfig } from "./validate";
 
-export type { AppConfig, ConfigResult, SettingReport, SettingStatus } from "./validate";
+export type {
+  AppConfig,
+  ConfigResult,
+  DriveCredentials,
+  SettingReport,
+  SettingStatus,
+} from "./validate";
 
 export class ConfigError extends Error {
   constructor() {

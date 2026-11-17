@@ -98,8 +98,8 @@ readmyagent
 ├── app/                    Next.js routes (UI and route handlers)
 │   ├── (reader)/           Inbox, run detail, item detail, actions, health
 │   └── api/
-│       ├── sync/           POST: trigger ingestion (session or cron secret)
-│       └── cron/sync/      GET: Vercel cron entry point
+│       ├── sync/           POST: manual sync (owner session)
+│       └── cron/sync/      GET: Vercel cron entry point (cron secret)
 ├── lib/
 │   ├── drive/              Drive client: list, download, update feedback.json
 │   ├── ingest/             Parse and validate run JSON, upsert runs and items
@@ -113,7 +113,7 @@ readmyagent
 
 | Block | Responsibility | Depends on |
 |---|---|---|
-| Drive client | All Drive API calls, retries, rate limiting | googleapis, service account through Workload Identity Federation (ADR-0008) |
+| Drive client | List, download and update `feedback.json` over the Drive v3 REST API; retries on 429, 5xx and network errors; 2 MB limit per run file | `google-auth-library` and `@vercel/oidc` for the service account through Workload Identity Federation (ADR-0008). The full `googleapis` package is not needed for three calls |
 | Ingest | Find new run files, validate against contract, idempotent upsert, record errors | Drive client, contract, db |
 | Feedback publisher | Serialize pending and published feedback to `feedback.json`, validated against the contract; publishes serialized by a Postgres advisory lock | Drive client, db |
 | Feedback reconciler | Mark feedback consumed based on `feedback_consumed` in ingested runs | db |
@@ -127,13 +127,14 @@ readmyagent
 
 Triggers: opening the app when the last sync is older than 5 minutes, the manual "Sync" button, and the daily Vercel cron.
 
-1. Acquire a sync lock (row in `sync_runs` with status `running`; stale after 10 minutes).
+1. Acquire a sync lock (row in `sync_runs` with status `running`, enforced by a partial unique index). A lock older than 10 minutes is closed as `failed` first.
 2. List files in the Drive folder with `modifiedTime` after the last successful sync minus a 1-day overlap.
-3. For each `*.json` run file not yet in `runs` by Drive file ID: download, validate against the contract version it declares.
+3. For each `*.json` run file (not `feedback.json`) not yet in `runs` by Drive file ID: download, validate against the contract version it declares. The Markdown log named in `log_file` is linked by its Drive ID when it is in the same listing. A failed download becomes an ingest error and the sync continues; the error is resolved automatically when the file is ingested later.
 4. Valid: upsert run and items in one transaction. Items are deduplicated by `(agent, fingerprint)`; a repeated finding links to the existing item instead of creating a new one.
 5. Invalid: store an `ingest_errors` row with the file ID and validation message. Never drop silently.
 6. Reconcile feedback: for each ingested run, mark listed feedback IDs as `consumed`.
-7. Recompute health. Release the lock, store counts.
+7. Publish `feedback.json` when feedback was consumed or is pending.
+8. Release the lock and store counts. Status `ok`, `partial` (some files or the publish failed) or `failed` (Drive could not be listed). Health is computed when it is read.
 
 Idempotency: the Drive file ID is the natural key. Re-running ingestion over the same files changes nothing.
 
