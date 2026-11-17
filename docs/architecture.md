@@ -107,7 +107,7 @@ readmyagent
 │   ├── health/             Expected-run calculation and health status
 │   ├── db/                 Drizzle schema, migrations, queries
 │   ├── auth/               Auth.js config and owner allowlist
-│   └── contract/           Zod schemas generated from /schemas
+│   └── contract/           Zod mirrors of /schemas, kept in parity by tests
 └── schemas/                JSON Schemas for the agent contract (source of truth)
 ```
 
