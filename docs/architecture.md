@@ -115,7 +115,7 @@ readmyagent
 |---|---|---|
 | Drive client | All Drive API calls, retries, rate limiting | googleapis, service account through Workload Identity Federation (ADR-0008) |
 | Ingest | Find new run files, validate against contract, idempotent upsert, record errors | Drive client, contract, db |
-| Feedback publisher | Serialize pending feedback to `feedback.json`, write with optimistic concurrency | Drive client, db |
+| Feedback publisher | Serialize pending and published feedback to `feedback.json`, validated against the contract; publishes serialized by a Postgres advisory lock | Drive client, db |
 | Feedback reconciler | Mark feedback consumed based on `feedback_consumed` in ingested runs | db |
 | Health | Compute expected runs per agent from cron schedule, flag missing and failed | db, agent config |
 | Reader UI | Inbox of open items, run timeline, item detail with feedback form, actions list, health view | db, auth |
@@ -141,7 +141,7 @@ Idempotency: the Drive file ID is the natural key. Re-running ingestion over the
 
 1. Owner marks an item, for example "not spam, keep this sender", or adds a rule for an agent.
 2. Feedback row is created with status `pending`.
-3. Publisher regenerates `feedback.json` with all `pending` and `published` feedback for all agents and updates the file in Drive. Rows become `published`.
+3. Publisher regenerates `feedback.json` with all `pending` and `published` feedback for all agents and updates the file in Drive. Rows become `published`. The file is written inside the database transaction: if the write fails, rows stay `pending` and the next publish retries. If the write succeeds and the commit fails, the next publish writes the same entries again, which is harmless because agents apply entries idempotently.
 4. On its next run, the agent reads `feedback.json`, applies entries addressed to it, and lists the applied IDs in `feedback_consumed` in its run JSON.
 5. Ingestion marks those rows `consumed` and links them to the run.
 6. Feedback that stays `published` across two expected runs of its agent is flagged in the health view. This catches an agent that ignores feedback.

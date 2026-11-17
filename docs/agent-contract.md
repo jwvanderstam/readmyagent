@@ -132,6 +132,8 @@ Schema: [`schemas/feedback.schema.json`](../schemas/feedback.schema.json)
 | `dismiss` | Stop reporting this fingerprint. |
 | `rule` | A new standing rule in plain language in `note`, scoped to this agent. |
 
+Every type except `rule` refers to an item and carries its fingerprint in `target.fingerprint`. `rule` has no target. `incorrect` and `rule` always have a `note`.
+
 ### 3.3 Rules for agents
 
 1. Read `feedback.json` at the start of every run. A missing or unreadable file is not an error: continue without feedback and note it in `verification.notes`.

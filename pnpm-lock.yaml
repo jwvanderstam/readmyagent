@@ -29,6 +29,9 @@ importers:
       server-only:
         specifier: ^0.0.1
         version: 0.0.1
+      ulid:
+        specifier: 3.0.2
+        version: 3.0.2
       zod:
         specifier: 4.6.7
         version: 4.6.7
@@ -2820,6 +2823,10 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
+  ulid@3.0.2:
+    resolution: {integrity: sha512-yu26mwteFYzBAot7KVMqFGCVpsF6g8wXfJzQUHvu1no3+rRRSFcSV2nKeYvNPLD2J4b08jYBDhHUjeH0ygIl9w==}
+    hasBin: true
+
   unbox-primitive@1.1.0:
     resolution: {integrity: sha512-nWJ91DjeOkej/TA8pXQ3myruKpKEYgqvpw9lz4OPHj/NWFNluYrjbz9j01CJ8yKQd2g4jFoOkINCTW2I5LEEyw==}
     engines: {node: '>= 0.4'}
@@ -5571,6 +5578,8 @@ snapshots:
       - supports-color
 
   typescript@6.0.3: {}
+
+  ulid@3.0.2: {}
 
   unbox-primitive@1.1.0:
     dependencies:
