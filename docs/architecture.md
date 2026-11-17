@@ -178,7 +178,9 @@ Details:
 - **Time.** Store UTC (`timestamptz`), display Europe/Amsterdam.
 - **Observability.** Structured JSON logs from route handlers; every sync writes a `sync_runs` row with counts and errors, visible in the UI.
 - **Configuration as data.** Agents are rows in the `agents` table, managed by the owner in the app. Nothing instance-specific lives in code.
-- **Fail closed on configuration.** Environment variables are validated at startup. With a missing or invalid required value, the app serves only its setup page.
+- **Fail closed on configuration.** `proxy.ts` validates the environment on every request (`lib/config`). With a missing or invalid required value, every page is rewritten to `/setup` and every API route answers 503. The setup page lists setting names and statuses, never values. Application code reads configuration only through `getConfig()`.
+- **Per-environment requirements.** Production needs Drive and `CRON_SECRET`. Previews and local development may run without them: sync and cron are then disabled. A partial Drive configuration is always invalid.
+- **Security headers.** Static headers in `next.config.ts`; the Content Security Policy with a per-request nonce in `proxy.ts`. All pages render per request so the nonce can be applied.
 
 ## 9. Architecture decisions
 

@@ -48,12 +48,12 @@ Rules for code and configuration:
 - No secret is ever read through a `NEXT_PUBLIC_` variable: those are inlined into the browser bundle.
 - Modules that read secrets import `server-only`, so the build fails if they end up in client code.
 - Environment variables are parsed with Zod at startup. Missing or malformed required values stop the app with an error that names the variable, never its value.
-- The setup page shows per setting only whether it is configured.
+- The setup page shows per setting only whether it is configured. It is public while the instance is not configured, because no sign-in exists yet; it reveals setting names, which are documented anyway, and no values. Once configured, it redirects to the app.
 - `.env*` files are ignored by git, except `.env.example` which holds names only.
 
 ## Security headers
 
-Set in `next.config` for all routes: `Content-Security-Policy`, `Strict-Transport-Security`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy` with all unused features disabled, `X-Frame-Options: DENY`.
+Static headers are set in `next.config.ts` and the Content Security Policy in `proxy.ts`, with a fresh nonce per request, `strict-dynamic`, and no `unsafe-inline`. For all routes: `Content-Security-Policy`, `Strict-Transport-Security`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy` with all unused features disabled, `X-Frame-Options: DENY`.
 
 ## Data minimization
 

@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { connection } from "next/server";
 import type { ReactNode } from "react";
 import "./globals.css";
 
@@ -13,7 +14,9 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  // Every page renders per request, so the CSP nonce from proxy.ts can be applied (SECURITY.md).
+  await connection();
   return (
     <html lang="en">
       <body className="min-h-dvh bg-white text-neutral-900 antialiased">{children}</body>
