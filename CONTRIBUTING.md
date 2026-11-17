@@ -1,6 +1,6 @@
 # Contributing
 
-Single-owner project, developed with the help of Claude. These rules keep the history readable and `main` always deployable.
+Maintained by a single owner and developed with the help of Claude. Every user runs their own instance (ADR-0007); contributions that keep the app self-hostable are welcome. These rules keep the history readable and `main` always deployable.
 
 ## Branching
 

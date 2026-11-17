@@ -1,6 +1,6 @@
 # readmyagent
 
-A personal reader for the output of scheduled Claude agents. It collects every agent run in one place, keeps the history, lets the owner give feedback on individual findings, tracks follow-up actions, and feeds that feedback back to the agents on their next run.
+A self-hosted, personal reader for the output of scheduled Claude agents. It collects every agent run in one place, keeps the history, lets the owner give feedback on individual findings, tracks follow-up actions, and feeds that feedback back to the agents on their next run.
 
 ```
 Claude agent runs  ->  writes run files to Google Drive  ->  readmyagent ingests them
@@ -9,7 +9,7 @@ Claude agent runs  ->  writes run files to Google Drive  ->  readmyagent ingests
    reads feedback.json  <-  readmyagent publishes feedback  <-  owner reviews, gives feedback, tracks actions
 ```
 
-The first agents feeding the reader are:
+Example: the agents of the author's own instance.
 
 | Agent | Schedule (Europe/Amsterdam) | Purpose |
 |---|---|---|
@@ -17,7 +17,11 @@ The first agents feeding the reader are:
 | LocalChat-wachter | daily 07:44 | Read-only watcher over the LocalChat repository |
 | Weekbrief | Friday 12:50 | Weekly summary and agent health check |
 
-The design is agent-agnostic: any agent that follows the [agent contract](docs/agent-contract.md) can be added without code changes.
+The design is agent-agnostic: any agent that follows the [agent contract](docs/agent-contract.md) can be added in the app, without code changes.
+
+## Run your own instance
+
+readmyagent is not a hosted service. Everyone who wants to use it deploys their own instance, on their own GitHub, Vercel, Neon and Google Cloud accounts, within the free plans. No data or secrets are shared with anyone, including the maintainers. See [ADR-0007](docs/adr/0007-self-hosted-instance-per-user.md) and the setup guide in [operations](docs/operations.md).
 
 ## Status
 
@@ -43,8 +47,8 @@ Phase 1 in progress: application scaffold and CI are in place, features follow. 
 - Next.js (App Router) with TypeScript in strict mode, hosted on Vercel Hobby
 - Neon Postgres via the Vercel Marketplace, accessed with Drizzle ORM
 - Auth.js with Google sign-in, restricted to a single allowlisted account
-- Google Drive API with a service account as the integration point with the agents
+- Google Drive API as the integration point with the agents, accessed as a service account through Workload Identity Federation, without a key
 
 ## License
 
-Private project. All rights reserved.
+[MIT](LICENSE).

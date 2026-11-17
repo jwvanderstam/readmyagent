@@ -9,4 +9,6 @@ Format: [Michael Nygard](https://cognitect.com/blog/2011/11/15/documenting-archi
 | [0003](0003-single-owner-google-auth.md) | Single-owner authentication with Google sign-in | Accepted |
 | [0004](0004-json-run-contract.md) | Structured JSON run file next to the Markdown log | Accepted |
 | [0005](0005-feedback-file-loop.md) | Feedback to agents through an application-owned feedback.json | Accepted |
-| [0006](0006-drive-service-account.md) | Drive access with a service account, updates only | Accepted |
+| [0006](0006-drive-service-account.md) | Drive access with a service account, updates only | Superseded by 0008 |
+| [0007](0007-self-hosted-instance-per-user.md) | One self-hosted instance per user | Accepted |
+| [0008](0008-drive-access-workload-identity-federation.md) | Drive access through Workload Identity Federation, no service account key | Accepted |
