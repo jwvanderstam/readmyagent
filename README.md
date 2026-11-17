@@ -21,7 +21,7 @@ The design is agent-agnostic: any agent that follows the [agent contract](docs/a
 
 ## Status
 
-Phase 0: architecture, contracts and standards. No application code yet. See [roadmap](docs/roadmap.md).
+Phase 1 in progress: application scaffold and CI are in place, features follow. See [roadmap](docs/roadmap.md).
 
 ## Documentation
 

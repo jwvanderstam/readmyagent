@@ -1,0 +1,6 @@
+pnpm-lock.yaml
+.next/
+coverage/
+# Docs and contract files are hand-formatted; Prettier would pad every table.
+*.md
+schemas/
