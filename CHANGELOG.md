@@ -10,6 +10,8 @@ All notable changes to this project are documented here. Format: [Keep a Changel
 - CI workflow `ci`: format, lint, typecheck, tests, dependency audit and build.
 - Contract tests that validate all examples in `schemas/examples` and `docs/agent-contract.md` against the JSON Schemas.
 - Dependabot version updates for npm and GitHub Actions.
+- Database schema and initial migration for agents, runs, items, feedback, actions, sync runs and ingest errors. The sync lock is enforced by a partial unique index.
+- CI check that fails when the schema changes without a committed migration.
 - Architecture document, ADR-0001 to ADR-0006.
 - Agent contract 1.0 with JSON Schemas for run files and `feedback.json`.
 - Data model, standards, contributing guide, security model, operations runbook, roadmap.

@@ -64,7 +64,7 @@ These standards apply to all code and documentation in this repository. A pull r
 | Level | Tool | Scope | Minimum |
 |---|---|---|---|
 | Unit | Vitest | `lib/` pure functions: contract parsing, health, feedback serialization, reconciliation | 90% line coverage in `lib/ingest`, `lib/feedback`, `lib/health` |
-| Integration | Vitest + Postgres (Neon branch or local container) | Ingestion end to end with recorded Drive fixtures | Every ingestion scenario in architecture section 6 |
+| Integration | Vitest + PGlite (in-process Postgres, real migrations) | Ingestion end to end with recorded Drive fixtures | Every ingestion scenario in architecture section 6 |
 | End to end | Playwright | Sign-in guard, inbox, give feedback, create action | Happy path plus unauthorized access |
 | Contract | Vitest | Example files in `docs/agent-contract.md` and `schemas/examples/` validate against the schemas | All examples |
 
