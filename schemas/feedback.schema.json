@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jwvanderstam/readmyagent/schemas/feedback.schema.json",
+  "title": "Feedback file",
+  "description": "Feedback published by readmyagent for agents to consume, contract version 1.x",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_version", "generated_at", "entries"],
+  "properties": {
+    "contract_version": { "type": "string", "pattern": "^1\\.[0-9]+$" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "entries": {
+      "type": "array",
+      "maxItems": 500,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "agent", "type", "created_at"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^fb_[A-Za-z0-9]+$" },
+          "agent": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+          "type": {
+            "enum": [
+              "correct",
+              "incorrect",
+              "keep_sender",
+              "archive_sender",
+              "knowledge_sender",
+              "dismiss",
+              "rule"
+            ]
+          },
+          "target": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "fingerprint": { "type": "string", "maxLength": 256 },
+              "run_id": { "type": "string", "maxLength": 128 }
+            }
+          },
+          "note": { "type": "string", "maxLength": 1000 },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  }
+}

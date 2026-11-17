@@ -1,0 +1,195 @@
+# Architecture
+
+Version 0.1, 2026-11-17. Structure loosely follows arc42.
+
+## 1. Goals
+
+### 1.1 Problem
+
+Scheduled Claude agents run unattended and write their output as separate Markdown files into a Google Drive folder. That works as an archive but not as a working tool:
+
+- Output is scattered across many files and has to be looked up manually.
+- There is no history view, no trend, and no way to see at a glance whether an agent silently failed.
+- Feedback to an agent (for example "this sender is fine, stop proposing it for deletion") requires hand-editing a state file. Agents cannot overwrite files in Drive through their connector, so they cannot close the loop themselves.
+- Follow-up actions that come out of agent findings are not tracked anywhere.
+
+### 1.2 Goals
+
+| ID | Goal |
+|---|---|
+| G1 | One place to read all agent output, from any device |
+| G2 | Detect missing or failed runs within one day |
+| G3 | Give feedback per finding, and have the responsible agent consume it on its next run, with proof that it did |
+| G4 | Track follow-up actions that come out of findings |
+| G5 | Add a new agent without code changes |
+| G6 | Run at zero recurring cost |
+
+### 1.3 Non-goals (for now)
+
+- General personal productivity features (tasks, notes, calendar). The data model leaves room for them; they are out of scope until the agent loop is used daily. See [roadmap](roadmap.md).
+- Multi-user support.
+- Agents writing directly into the application. See ADR-0001.
+
+### 1.4 Quality goals, in priority order
+
+1. **Correctness of state.** A run is never lost, never ingested twice, and feedback is never applied twice.
+2. **Visible failure.** A missing run or a failed sync is shown, never silently skipped.
+3. **Security.** Only the owner can read the data; content written by agents is treated as untrusted.
+4. **Low maintenance.** Managed services only, no servers to patch.
+5. **Extensibility.** New agents and new item kinds through configuration and contract, not code.
+
+## 2. Constraints
+
+| Constraint | Consequence |
+|---|---|
+| Agents run in Anthropic's cloud behind an outbound network allowlist | Agents cannot be assumed to reach a custom HTTPS endpoint. Integration goes through a connector they already have: Google Drive. |
+| The agents' Drive connector can create files but cannot overwrite them | Agents write one new file per run. Feedback to agents lives in a file the application maintains. |
+| Vercel Hobby plan | Personal, non-commercial use. Cron jobs run at most once per day and may fire anywhere within the scheduled hour. |
+| Neon Free plan | 1 GB storage and 100 CU-hours per project per month. Compute scales to zero when idle, so expect cold starts. |
+| Google service accounts have no Drive storage quota | The service account cannot create files in a personal My Drive. It can read files in a folder shared with it and update files that the owner created. |
+
+## 3. Context
+
+```
+                   +-------------------------+
+                   |  Owner (any device)     |
+                   +-----------+-------------+
+                               | HTTPS, Google sign-in
+                               v
++------------------+   Drive API (service account)   +------------------------+
+| Google Drive     | <-------------------------------> | readmyagent on Vercel |
+| folder           |   read run files                  |  Next.js app          |
+| "Claude-agents"  |   update feedback.json            |  + Neon Postgres      |
++--------+---------+                                   +------------------------+
+         ^
+         | Drive connector: create run files, read feedback.json
+         |
++--------+----------------------+
+| Scheduled Claude agents       |
+| Mail-triage, LocalChat-wachter|
+| Weekbrief, future agents      |
++-------------------------------+
+```
+
+External systems:
+
+| System | Role | Interface |
+|---|---|---|
+| Scheduled Claude agents | Produce run files, consume feedback | Google Drive connector |
+| Google Drive | Exchange medium and long-term archive | Drive API v3 |
+| Google Identity | Owner sign-in | OAuth 2.0 / OpenID Connect via Auth.js |
+| Neon | Application database | Postgres over TLS |
+| Vercel | Hosting, functions, daily cron | Git-based deployment |
+
+## 4. Solution strategy
+
+1. **Pull, do not push.** Agents keep writing to Drive exactly as today. The application pulls from Drive. This removes any dependency on agent network access and keeps Drive as the archive of record. (ADR-0001)
+2. **Structured contract next to human log.** Every run writes a machine-readable JSON file next to its Markdown log. The application ingests JSON only; Markdown is linked for reading. (ADR-0004)
+3. **Feedback through one application-owned file.** The application writes all pending feedback into `feedback.json` in the same Drive folder. Agents read it at the start of a run and report which feedback IDs they consumed in their run JSON. The application then marks those as consumed. The loop closes without agents ever writing to the application. (ADR-0005)
+4. **Database is a projection plus owner state.** Runs and items are a projection of Drive and can be rebuilt by re-ingesting. Feedback, actions and item states are owned by the database and are the only data that must be backed up.
+5. **Expected runs come from configuration.** Each agent has a declared schedule. Health is computed by comparing expected against ingested runs, so a missing run is a first-class signal.
+
+## 5. Building blocks
+
+```
+readmyagent
+├── app/                    Next.js routes (UI and route handlers)
+│   ├── (reader)/           Inbox, run detail, item detail, actions, health
+│   └── api/
+│       ├── sync/           POST: trigger ingestion (session or cron secret)
+│       └── cron/sync/      GET: Vercel cron entry point
+├── lib/
+│   ├── drive/              Drive client: list, download, update feedback.json
+│   ├── ingest/             Parse and validate run JSON, upsert runs and items
+│   ├── feedback/           Build and publish feedback.json, reconcile consumption
+│   ├── health/             Expected-run calculation and health status
+│   ├── db/                 Drizzle schema, migrations, queries
+│   ├── auth/               Auth.js config and owner allowlist
+│   └── contract/           Zod schemas generated from /schemas
+└── schemas/                JSON Schemas for the agent contract (source of truth)
+```
+
+| Block | Responsibility | Depends on |
+|---|---|---|
+| Drive client | All Drive API calls, retries, rate limiting | googleapis, service account |
+| Ingest | Find new run files, validate against contract, idempotent upsert, record errors | Drive client, contract, db |
+| Feedback publisher | Serialize pending feedback to `feedback.json`, write with optimistic concurrency | Drive client, db |
+| Feedback reconciler | Mark feedback consumed based on `feedback_consumed` in ingested runs | db |
+| Health | Compute expected runs per agent from cron schedule, flag missing and failed | db, agent config |
+| Reader UI | Inbox of open items, run timeline, item detail with feedback form, actions list, health view | db, auth |
+| Auth | Google sign-in, allowlist of one email, session handling | Auth.js |
+
+## 6. Runtime scenarios
+
+### 6.1 Ingestion
+
+Triggers: opening the app when the last sync is older than 5 minutes, the manual "Sync" button, and the daily Vercel cron.
+
+1. Acquire a sync lock (row in `sync_runs` with status `running`; stale after 10 minutes).
+2. List files in the Drive folder with `modifiedTime` after the last successful sync minus a 1-day overlap.
+3. For each `*.json` run file not yet in `runs` by Drive file ID: download, validate against the contract version it declares.
+4. Valid: upsert run and items in one transaction. Items are deduplicated by `(agent, fingerprint)`; a repeated finding links to the existing item instead of creating a new one.
+5. Invalid: store an `ingest_errors` row with the file ID and validation message. Never drop silently.
+6. Reconcile feedback: for each ingested run, mark listed feedback IDs as `consumed`.
+7. Recompute health. Release the lock, store counts.
+
+Idempotency: the Drive file ID is the natural key. Re-running ingestion over the same files changes nothing.
+
+### 6.2 Feedback loop
+
+1. Owner marks an item, for example "not spam, keep this sender", or adds a rule for an agent.
+2. Feedback row is created with status `pending`.
+3. Publisher regenerates `feedback.json` with all `pending` and `published` feedback for all agents and updates the file in Drive. Rows become `published`.
+4. On its next run, the agent reads `feedback.json`, applies entries addressed to it, and lists the applied IDs in `feedback_consumed` in its run JSON.
+5. Ingestion marks those rows `consumed` and links them to the run.
+6. Feedback that stays `published` across two expected runs of its agent is flagged in the health view. This catches an agent that ignores feedback.
+
+### 6.3 Missing run detection
+
+For every active agent, the health module expands the agent's cron expression over the last 14 days, applies a grace window (default 3 hours), and matches each expected slot to an ingested run. Unmatched slots are shown as `missing`. Runs with status `failed` or a failed verification are shown as `failed`.
+
+## 7. Deployment
+
+| Component | Where | Notes |
+|---|---|---|
+| Application | Vercel Hobby, production branch `main` | Preview deployments per pull request |
+| Database | Neon Free, region closest to the Vercel function region (EU) | Separate Neon branch for previews |
+| Secrets | Vercel environment variables | Never in the repository. See [operations](operations.md) |
+| Cron | `vercel.json`, once per day | Hobby limit; manual and on-open sync cover the rest |
+| Drive folder | Owner's My Drive, shared with the service account as Editor | `feedback.json` created once by the owner |
+
+## 8. Cross-cutting concepts
+
+- **Validation at the edge.** Every external input (Drive files, form posts, cron calls) is validated with Zod before it reaches the database.
+- **Untrusted content.** Agent output can contain text from emails, web pages and repositories. It is rendered as sanitized Markdown with raw HTML disabled, links set to `rel="noopener noreferrer nofollow"`, and never executed or interpolated into SQL or prompts. See [SECURITY.md](../SECURITY.md).
+- **Time.** Store UTC (`timestamptz`), display Europe/Amsterdam.
+- **Observability.** Structured JSON logs from route handlers; every sync writes a `sync_runs` row with counts and errors, visible in the UI.
+- **Configuration as data.** Agents are rows in the `agents` table, seeded from `config/agents.ts`, not hard-coded in UI logic.
+
+## 9. Architecture decisions
+
+See the [ADR log](adr/README.md).
+
+## 10. Risks and technical debt
+
+| ID | Risk | Likelihood | Impact | Mitigation |
+|---|---|---|---|---|
+| R1 | Agents do not reliably produce valid JSON | Medium | High | Strict schema with versioning; ingest errors visible in UI; agent prompt includes the schema and a self-check step |
+| R2 | Service account approach breaks because Google changes Drive quota rules again | Low | Medium | Only update operations on an owner-created file; fallback is OAuth as the owner with a stored refresh token |
+| R3 | `feedback.json` becomes an injection channel into agents | Low | High | Only the authenticated owner creates feedback; schema restricts types; agents instructed to treat entries as data within a fixed set of actions |
+| R4 | Vercel Hobby cron fires once per day, late within the hour | High | Low | On-open sync and manual sync; health uses a grace window |
+| R5 | Neon cold starts make first page load slow | High | Low | Acceptable for single user; show loading state |
+| R6 | Scope creep into a general productivity app before the agent loop is proven | Medium | Medium | Phase gate in roadmap: phase 2 only starts after 4 weeks of daily use |
+| R7 | Lock-in on Vercel or Neon | Low | Low | Standard Next.js and Postgres; Drizzle migrations are portable |
+
+## 11. Glossary
+
+| Term | Meaning |
+|---|---|
+| Agent | A scheduled Claude task that writes run files |
+| Run | One execution of an agent, represented by one run JSON file |
+| Item | One finding inside a run that may need attention |
+| Fingerprint | Stable key of an item across runs, used for deduplication |
+| Feedback | Owner input addressed to an agent, delivered through `feedback.json` |
+| Action | A follow-up task for the owner, optionally linked to an item |
+| Expected run | A schedule slot in which a run should have appeared |

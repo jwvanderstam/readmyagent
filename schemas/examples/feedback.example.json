@@ -1,0 +1,26 @@
+{
+  "contract_version": "1.0",
+  "generated_at": "2026-11-18T20:15:03+01:00",
+  "entries": [
+    {
+      "id": "fb_01JD3K8Z9QX7",
+      "agent": "mail-triage",
+      "type": "keep_sender",
+      "target": {
+        "fingerprint": "sender:news@example-shop.nl"
+      },
+      "note": "Ik lees deze, niet meer voorstellen.",
+      "created_at": "2026-11-18T20:14:51+01:00"
+    },
+    {
+      "id": "fb_01JD3KA4M2P1",
+      "agent": "localchat-wachter",
+      "type": "dismiss",
+      "target": {
+        "fingerprint": "cve:CVE-2026-12345:requests"
+      },
+      "note": "Accepted risk, not reachable in our usage.",
+      "created_at": "2026-11-18T20:15:01+01:00"
+    }
+  ]
+}

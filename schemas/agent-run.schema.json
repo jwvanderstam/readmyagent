@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jwvanderstam/readmyagent/schemas/agent-run.schema.json",
+  "title": "Agent run",
+  "description": "One run of a scheduled agent, contract version 1.x",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "contract_version",
+    "agent",
+    "run_id",
+    "started_at",
+    "finished_at",
+    "status",
+    "summary",
+    "items",
+    "verification",
+    "feedback_consumed"
+  ],
+  "properties": {
+    "contract_version": { "type": "string", "pattern": "^1\\.[0-9]+$" },
+    "agent": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "maxLength": 64 },
+    "run_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "started_at": { "type": "string", "format": "date-time" },
+    "finished_at": { "type": "string", "format": "date-time" },
+    "status": { "enum": ["ok", "warning", "failed"] },
+    "summary": { "type": "string", "maxLength": 500 },
+    "metrics": {
+      "type": "object",
+      "propertyNames": { "pattern": "^[a-z][a-z0-9_]*$" },
+      "additionalProperties": { "type": "number" }
+    },
+    "items": {
+      "type": "array",
+      "maxItems": 200,
+      "items": { "$ref": "#/$defs/item" }
+    },
+    "verification": {
+      "type": "object",
+      "required": ["iterations", "result"],
+      "properties": {
+        "iterations": { "type": "integer", "minimum": 0, "maximum": 10 },
+        "result": { "enum": ["ok", "issues", "skipped"] },
+        "notes": { "type": "array", "items": { "type": "string", "maxLength": 500 } }
+      }
+    },
+    "feedback_consumed": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^fb_[A-Za-z0-9]+$" }
+    },
+    "log_file": { "type": "string", "maxLength": 256 }
+  },
+  "$defs": {
+    "item": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["fingerprint", "kind", "severity", "title"],
+      "properties": {
+        "fingerprint": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "kind": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$", "maxLength": 64 },
+        "severity": { "enum": ["info", "low", "medium", "high", "critical"] },
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "body": { "type": "string", "maxLength": 4000 },
+        "source": {
+          "type": "object",
+          "required": ["type"],
+          "properties": {
+            "type": { "enum": ["gmail_thread", "commit", "pull_request", "url", "file", "other"] },
+            "ref": { "type": "string", "maxLength": 512 },
+            "url": { "type": "string", "format": "uri", "maxLength": 2048 }
+          }
+        },
+        "suggested_action": { "type": "string", "maxLength": 500 }
+      }
+    }
+  }
+}
