@@ -23,6 +23,7 @@ Scheduled Claude agents run unattended and write their output as separate Markdo
 | G4 | Track follow-up actions that come out of findings |
 | G5 | Add a new agent without code changes |
 | G6 | Run at zero recurring cost |
+| G7 | Anyone can run their own instance on their own accounts, without sharing data or secrets (ADR-0007) |
 
 ### 1.3 Non-goals (for now)
 
@@ -36,7 +37,8 @@ Scheduled Claude agents run unattended and write their output as separate Markdo
 2. **Visible failure.** A missing run or a failed sync is shown, never silently skipped.
 3. **Security.** Only the owner can read the data; content written by agents is treated as untrusted.
 4. **Low maintenance.** Managed services only, no servers to patch.
-5. **Extensibility.** New agents and new item kinds through configuration and contract, not code.
+5. **Self-hostable.** No personal values in code; setup by configuration only.
+6. **Extensibility.** New agents and new item kinds through configuration and contract, not code.
 
 ## 2. Constraints
 
@@ -111,7 +113,7 @@ readmyagent
 
 | Block | Responsibility | Depends on |
 |---|---|---|
-| Drive client | All Drive API calls, retries, rate limiting | googleapis, service account |
+| Drive client | All Drive API calls, retries, rate limiting | googleapis, service account through Workload Identity Federation (ADR-0008) |
 | Ingest | Find new run files, validate against contract, idempotent upsert, record errors | Drive client, contract, db |
 | Feedback publisher | Serialize pending feedback to `feedback.json`, write with optimistic concurrency | Drive client, db |
 | Feedback reconciler | Mark feedback consumed based on `feedback_consumed` in ingested runs | db |
@@ -154,9 +156,10 @@ For every active agent, the health module expands the agent's cron expression ov
 |---|---|---|
 | Application | Vercel Hobby, production branch `main` | Preview deployments per pull request |
 | Database | Neon Free, region closest to the Vercel function region (EU) | Separate Neon branch for previews |
-| Secrets | Vercel environment variables | Never in the repository. See [operations](operations.md) |
+| Secrets | Vercel environment variables of the instance owner, marked Sensitive | Never in the repository. No Google key: Drive access through Workload Identity Federation. See [operations](operations.md) |
 | Cron | `vercel.json`, once per day | Hobby limit; manual and on-open sync cover the rest |
 | Drive folder | Owner's My Drive, shared with the service account as Editor | `feedback.json` created once by the owner |
+| Instances | One per user, on the user's own accounts | Updated by merging release tags (ADR-0007) |
 
 ## 8. Cross-cutting concepts
 
@@ -164,7 +167,8 @@ For every active agent, the health module expands the agent's cron expression ov
 - **Untrusted content.** Agent output can contain text from emails, web pages and repositories. It is rendered as sanitized Markdown with raw HTML disabled, links set to `rel="noopener noreferrer nofollow"`, and never executed or interpolated into SQL or prompts. See [SECURITY.md](../SECURITY.md).
 - **Time.** Store UTC (`timestamptz`), display Europe/Amsterdam.
 - **Observability.** Structured JSON logs from route handlers; every sync writes a `sync_runs` row with counts and errors, visible in the UI.
-- **Configuration as data.** Agents are rows in the `agents` table, seeded from `config/agents.ts`, not hard-coded in UI logic.
+- **Configuration as data.** Agents are rows in the `agents` table, managed by the owner in the app. Nothing instance-specific lives in code.
+- **Fail closed on configuration.** Environment variables are validated at startup. With a missing or invalid required value, the app serves only its setup page.
 
 ## 9. Architecture decisions
 
@@ -181,6 +185,8 @@ See the [ADR log](adr/README.md).
 | R5 | Neon cold starts make first page load slow | High | Low | Acceptable for single user; show loading state |
 | R6 | Scope creep into a general productivity app before the agent loop is proven | Medium | Medium | Phase gate in roadmap: phase 2 only starts after 4 weeks of daily use |
 | R7 | Lock-in on Vercel or Neon | Low | Low | Standard Next.js and Postgres; Drizzle migrations are portable |
+| R8 | Setup in Google Cloud is too hard for a new user | Medium | Medium | Setup script, setup page and step-by-step operations guide |
+| R9 | Compromised upstream code reaches every instance | Low | High | Protected `main`, pinned CI actions, tagged releases, owners merge releases themselves. See SECURITY.md T11 |
 
 ## 11. Glossary
 

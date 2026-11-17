@@ -35,7 +35,7 @@ These standards apply to all code and documentation in this repository. A pull r
 | Constants | UPPER_SNAKE_CASE | `SYNC_LOCK_TTL_MS` |
 | Database tables and columns | snake_case, plural tables | `ingest_errors.drive_file_id` |
 | Agent slugs, item kinds | kebab-case slugs, snake_case kinds | `mail-triage`, `proposal_delete` |
-| Environment variables | UPPER_SNAKE_CASE, grouped by prefix | `GOOGLE_SA_KEY`, `DRIVE_FOLDER_ID` |
+| Environment variables | UPPER_SNAKE_CASE, grouped by prefix | `GCP_PROJECT_NUMBER`, `DRIVE_FOLDER_ID` |
 
 ## 4. API and route handlers
 
@@ -75,6 +75,9 @@ Fixtures use invented data only. No real mail metadata in the repository.
 See [SECURITY.md](../SECURITY.md). Minimum rules for every change:
 
 - No secret in code, tests, fixtures or logs.
+- No secret in a `NEXT_PUBLIC_` variable. Modules that read secrets import `server-only`. Environment variables are read through the validated config module only.
+- No instance-specific value (names, email addresses, IDs) in code. It belongs in configuration or the database.
+- GitHub Actions are pinned to a commit SHA and declare minimal `permissions`.
 - Agent-produced text is rendered with the shared `SafeMarkdown` component only.
 - New dependencies are checked with `pnpm audit` in CI.
 

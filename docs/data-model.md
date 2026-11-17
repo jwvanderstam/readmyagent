@@ -6,7 +6,7 @@ Postgres on Neon, managed with Drizzle ORM. Migrations live in `drizzle/` and ar
 
 | Data | Source of truth | Can be rebuilt from Drive |
 |---|---|---|
-| `agents` | `config/agents.ts` (seeded) | Yes, from config |
+| `agents` | Database, managed by the owner in the app (ADR-0007) | **No. Back up.** |
 | `runs`, `items` (content fields) | Drive run files | Yes, by re-ingesting |
 | `items.state`, `feedback`, `actions` | Database | **No. Back up.** |
 | `sync_runs`, `ingest_errors` | Database | Not needed |
@@ -118,4 +118,4 @@ Action: `todo -> doing -> done`, any state `-> dropped`.
 
 - Runs and items: kept indefinitely. Estimated volume: 3 agents, about 15 runs per week, under 50 MB per year including `raw`. Well inside the 1 GB Neon Free limit.
 - `sync_runs`: keep 90 days.
-- Backups: weekly `pg_dump` of owner-owned tables (`items` state columns, `feedback`, `actions`) via a GitHub Action to a private artifact. Defined in phase 1.
+- Backups: weekly `pg_dump` of owner-owned tables (`agents`, `items` state columns, `feedback`, `actions`) via a GitHub Action in the owner's fork, to an artifact encrypted with a key only the owner holds. Defined in phase 1. See [operations](operations.md#7-backup-and-restore).

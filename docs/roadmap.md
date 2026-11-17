@@ -11,6 +11,7 @@ Phases are gated: a phase starts only when the exit criteria of the previous one
 
 Scope:
 - Next.js scaffold, CI (lint, typecheck, test), Vercel and Neon wired, Auth.js with owner allowlist, security headers.
+- Self-hosting (ADR-0007): validated configuration with fail-closed setup page, agents managed in the app, Drive through Workload Identity Federation (ADR-0008), `gcloud` setup script, "Deploy to Vercel" button, first tagged release.
 - Drive client, ingestion with idempotency and ingest errors, sync on open, manual and daily cron.
 - Reader UI: inbox of open items, run timeline per agent, item detail, health view with missing and failed runs.
 - Feedback: create, publish to `feedback.json`, reconcile consumption.

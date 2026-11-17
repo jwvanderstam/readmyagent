@@ -1,6 +1,6 @@
 # ADR-0006: Drive access with a service account, updates only
 
-- Status: Accepted
+- Status: Superseded by [ADR-0008](0008-drive-access-workload-identity-federation.md)
 - Date: 2026-11-17
 
 ## Context
