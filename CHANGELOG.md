@@ -18,6 +18,7 @@ All notable changes to this project are documented here. Format: [Keep a Changel
 - Configuration validation with a setup page: until all required settings are valid, every page shows only the setup page and API routes answer 503. The page lists names and statuses, never values.
 - Sign-in with Google, restricted to the owner's verified address. Every page and API route except sign-in, setup, health and cron requires the owner's session.
 - Security headers, including a Content Security Policy with a per-request nonce.
+- Sync from Google Drive: daily cron, manual sync, and sync on opening the app when the last one is older than five minutes. Drive access through Workload Identity Federation with Vercel OIDC, or the service account key fallback.
 - Feedback: create with validation per type, withdraw, and publish all open feedback as a contract-valid `feedback.json`.
 - Health calculation: expected runs from each agent's schedule (timezone and DST aware), missing and failed runs, unscheduled runs, and feedback that stays unconsumed across two expected runs.
 - Architecture document, ADR-0001 to ADR-0006.

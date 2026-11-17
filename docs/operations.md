@@ -86,7 +86,7 @@ Do not create a key for the service account. The key-based setup (ADR-0006) is a
 | `GCP_WORKLOAD_IDENTITY_POOL_PROVIDER_ID` | production | no | `vercel` |
 | `DRIVE_FOLDER_ID` | production | no | ID of `Claude-agents` |
 | `DRIVE_FEEDBACK_FILE_ID` | production | no | ID of `feedback.json` from 1.3 |
-| `CRON_SECRET` | production | yes | Random secret; Vercel sends it as bearer token to cron routes |
+| `CRON_SECRET` | production | yes | Random secret of at least 16 characters; Vercel sends it as bearer token to the daily cron (`vercel.json`, 10:00 UTC, may fire later within the hour) |
 | `APP_TIMEZONE` | all | no | For example `Europe/Amsterdam` |
 | `GOOGLE_SA_KEY` | fallback only | yes | Base64 service account key. Only where Vercel OIDC is unavailable, for a test folder. Ignored when the `GCP_*` variables are set |
 
@@ -109,7 +109,7 @@ Use a separate Drive test folder with fixture files for local work, not the prod
 | Symptom | Check | Action |
 |---|---|---|
 | App shows only the setup page | The settings it marks as missing or invalid | Set them in Vercel for the right environment; redeploy |
-| No new runs appear | Sync history page: last `sync_runs` status | Trigger manual sync; if it fails, check Vercel function logs for `drive.*` events |
+| No new runs appear | Sync history page: last `sync_runs` status | Trigger manual sync; if it fails, check Vercel function logs for `sync.failed` and `drive.*` events (`drive.list_failed`, `drive.download_failed`, `drive.feedback_write_failed`) |
 | `drive.auth_failed` in logs | Workload identity provider and binding in Google Cloud | Check the issuer uses your team slug, the attribute condition matches your Vercel project name, and the binding subject ends in `environment:production`. A renamed Vercel project or team needs a new binding |
 | Run files present in Drive but not in reader | Ingest errors page | Fix the agent prompt for invalid JSON; mark error resolved; re-sync |
 | Agent shows `missing` slots | Scheduled task list in Claude; Drive folder for that day | If the task did not fire: re-enable or fire it manually. If it fired without a JSON file: check its session output |

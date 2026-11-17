@@ -16,6 +16,8 @@ export type RunFileInput = {
 export type IngestContext = {
   syncRunId: string;
   now?: () => Date;
+  /** Drive ID of the Markdown log named in `log_file`, if it is known. */
+  resolveLogFileId?: (fileName: string) => string | null;
 };
 
 export type IngestOutcome =
@@ -39,7 +41,7 @@ export async function ingestRunFile(
   if (await isAlreadyIngested(db, file.driveFileId)) return { status: "duplicate" };
 
   const parsed = parseRunFile(file.content);
-  if (!parsed.ok) return recordInvalid(db, file, ctx.syncRunId, parsed.message, now());
+  if (!parsed.ok) return recordIngestError(db, file, ctx.syncRunId, parsed.message, now());
   const run = parsed.run;
 
   // T4 in SECURITY.md: only configured agents are ingested.
@@ -48,7 +50,7 @@ export async function ingestRunFile(
     .from(agents)
     .where(eq(agents.slug, run.agent));
   if (!agent) {
-    return recordInvalid(
+    return recordIngestError(
       db,
       file,
       ctx.syncRunId,
@@ -64,6 +66,7 @@ export async function ingestRunFile(
         agentSlug: run.agent,
         runId: run.run_id,
         driveFileId: file.driveFileId,
+        logFileId: run.log_file ? (ctx.resolveLogFileId?.(run.log_file) ?? null) : null,
         contractVersion: run.contract_version,
         startedAt: new Date(run.started_at),
         finishedAt: new Date(run.finished_at),
@@ -92,6 +95,11 @@ export async function ingestRunFile(
       { id: inserted.id, agentSlug: run.agent, feedbackConsumed: run.feedback_consumed },
       now(),
     );
+    // An earlier failure for this file (for example a failed download) is resolved now.
+    await tx
+      .update(ingestErrors)
+      .set({ resolvedAt: now() })
+      .where(and(eq(ingestErrors.driveFileId, file.driveFileId), isNull(ingestErrors.resolvedAt)));
     return {
       status: "ingested",
       runId: inserted.id,
@@ -101,7 +109,7 @@ export async function ingestRunFile(
   });
 
   if (result.status === "conflict") {
-    return recordInvalid(db, file, ctx.syncRunId, result.message, now());
+    return recordIngestError(db, file, ctx.syncRunId, result.message, now());
   }
   return result;
 }
@@ -114,9 +122,10 @@ async function isAlreadyIngested(db: Db | Tx, driveFileId: string): Promise<bool
   return row !== undefined;
 }
 
-async function recordInvalid(
+/** Record that a file could not be ingested. Also used by sync for download failures. */
+export async function recordIngestError(
   db: Db,
-  file: RunFileInput,
+  file: Pick<RunFileInput, "driveFileId" | "fileName">,
   syncRunId: string,
   message: string,
   now: Date,
