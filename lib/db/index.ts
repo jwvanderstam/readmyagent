@@ -8,6 +8,8 @@ export { schema };
  * while production uses the Neon driver (see client.ts).
  */
 export type Db = PgDatabase<PgQueryResultHKT, typeof schema>;
+export type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
+export type DbOrTx = Db | Tx;
 
 export type Agent = typeof schema.agents.$inferSelect;
 export type NewAgent = typeof schema.agents.$inferInsert;
