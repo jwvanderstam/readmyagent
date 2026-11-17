@@ -10,5 +10,12 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },
     },
+    rules: {
+      // A leading underscore marks a deliberately unused binding, for example `const { a: _a, ...rest }`.
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", destructuredArrayIgnorePattern: "^_" },
+      ],
+    },
   },
 );
