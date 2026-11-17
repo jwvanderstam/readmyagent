@@ -198,6 +198,7 @@ See the [ADR log](adr/README.md).
 | R6 | Scope creep into a general productivity app before the agent loop is proven | Medium | Medium | Phase gate in roadmap: phase 2 only starts after 4 weeks of daily use |
 | R7 | Lock-in on Vercel or Neon | Low | Low | Standard Next.js and Postgres; Drizzle migrations are portable |
 | R8 | Setup in Google Cloud is too hard for a new user | Medium | Medium | Setup script, setup page and step-by-step operations guide |
+| R10 | Auth.js v5 is still a beta release (5.0.0-beta.32, July 2026) | Medium | Medium | Exact version pinned; access rules live in our own tested `lib/auth/policy.ts` and the proxy decodes the session itself, so a replacement library only changes `lib/auth/auth.ts` |
 | R9 | Compromised upstream code reaches every instance | Low | High | Protected `main`, pinned CI actions, tagged releases, owners merge releases themselves. See SECURITY.md T11 |
 
 ## 11. Glossary

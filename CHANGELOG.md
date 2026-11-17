@@ -16,6 +16,7 @@ All notable changes to this project are documented here. Format: [Keep a Changel
 - Zod versions of the contract schemas, with tests that keep them in agreement with the JSON Schemas.
 - Coverage thresholds in CI for the core domain modules.
 - Configuration validation with a setup page: until all required settings are valid, every page shows only the setup page and API routes answer 503. The page lists names and statuses, never values.
+- Sign-in with Google, restricted to the owner's verified address. Every page and API route except sign-in, setup, health and cron requires the owner's session.
 - Security headers, including a Content Security Policy with a per-request nonce.
 - Feedback: create with validation per type, withdraw, and publish all open feedback as a contract-valid `feedback.json`.
 - Health calculation: expected runs from each agent's schedule (timezone and DST aware), missing and failed runs, unscheduled runs, and feedback that stays unconsumed across two expected runs.
