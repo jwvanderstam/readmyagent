@@ -15,6 +15,7 @@ All notable changes to this project are documented here. Format: [Keep a Changel
 - Ingestion of run files: validation against the contract, idempotent storage per Drive file, item deduplication by fingerprint, ingest errors for invalid files, and feedback consumption from `feedback_consumed`.
 - Zod versions of the contract schemas, with tests that keep them in agreement with the JSON Schemas.
 - Coverage thresholds in CI for the core domain modules.
+- Health calculation: expected runs from each agent's schedule (timezone and DST aware), missing and failed runs, unscheduled runs, and feedback that stays unconsumed across two expected runs.
 - Architecture document, ADR-0001 to ADR-0006.
 - Agent contract 1.0 with JSON Schemas for run files and `feedback.json`.
 - Data model, standards, contributing guide, security model, operations runbook, roadmap.
