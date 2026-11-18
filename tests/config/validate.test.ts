@@ -87,6 +87,18 @@ describe("validateConfig", () => {
     expect(statusOf(result, "GCP_PROJECT_NUMBER")).toBe("missing");
   });
 
+  it("rejects Workload Identity values that could change the Google URLs", () => {
+    const result = validateConfig({
+      ...base,
+      VERCEL_ENV: "production",
+      GCP_SERVICE_ACCOUNT_EMAIL: "sa@evil.example/x?y",
+      GCP_PROJECT_NUMBER: "12/../3",
+    });
+    expect(result.ok).toBe(false);
+    expect(statusOf(result, "GCP_SERVICE_ACCOUNT_EMAIL")).toBe("invalid");
+    expect(statusOf(result, "GCP_PROJECT_NUMBER")).toBe("invalid");
+  });
+
   it("runs a preview without Drive and without cron", () => {
     const result = validateConfig({ ...base, VERCEL_ENV: "preview" });
     expect(result.ok).toBe(true);

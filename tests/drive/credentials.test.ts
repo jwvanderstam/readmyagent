@@ -36,7 +36,7 @@ describe("createAuthClient", () => {
       subject_token_type: "urn:ietf:params:oauth:token-type:jwt",
       token_url: "https://sts.googleapis.com/v1/token",
       service_account_impersonation_url:
-        "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/readmyagent-drive%40project.iam.gserviceaccount.com:generateAccessToken",
+        "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/readmyagent-drive@project.iam.gserviceaccount.com:generateAccessToken",
       scopes: DRIVE_SCOPES,
     });
     expect(options).not.toHaveProperty("private_key");

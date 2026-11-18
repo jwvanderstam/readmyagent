@@ -154,7 +154,16 @@ export function validateConfig(env: Env): ConfigResult {
 
     if (gcpSet.length > 0) {
       // Workload Identity Federation is preferred (ADR-0008); all four values are needed.
-      const values = GCP_VARS.map((n) => required(n));
+      // The values end up in Google URLs (lib/drive/credentials.ts), so their shape is checked.
+      const checks: Record<(typeof GCP_VARS)[number], RegExp> = {
+        GCP_PROJECT_NUMBER: /^\d+$/,
+        GCP_SERVICE_ACCOUNT_EMAIL: /^[a-z][a-z0-9-]*@[a-z][a-z0-9-]*\.iam\.gserviceaccount\.com$/,
+        GCP_WORKLOAD_IDENTITY_POOL_ID: /^[a-z0-9-]+$/,
+        GCP_WORKLOAD_IDENTITY_POOL_PROVIDER_ID: /^[a-z0-9-]+$/,
+      };
+      const values = GCP_VARS.map((n) =>
+        required(n, (v) => (checks[n].test(v) ? null : "Unexpected format.")),
+      );
       if (values.every(Boolean)) {
         const [projectNumber, serviceAccountEmail, poolId, providerId] = values as string[];
         credentials = {
