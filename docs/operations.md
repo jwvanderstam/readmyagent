@@ -77,9 +77,27 @@ Do not create a key for the service account. The key-based setup (ADR-0006) is a
 
 ### 1.4 Google sign-in (Auth.js)
 
-1. In the same Google Cloud project: OAuth consent screen, type External, scopes `openid`, `email`, `profile` only. Add yourself as test user.
-2. Create an OAuth client ID of type Web application.
-3. Authorized redirect URIs: `https://<production-domain>/api/auth/callback/google` and `http://localhost:3000/api/auth/callback/google`.
+In the same Google Cloud project, open **Google Auth Platform** and choose **Get started**:
+
+1. **App Information:** app name `readmyagent`, your address as support email.
+2. **Audience:** External. Internal is only available to Google Workspace accounts.
+3. **Contact Information:** your address.
+4. **Finish:** accept the Google API Services User Data Policy, then **Create**.
+5. **Audience > Test users > Add users:** add the address you set as `OWNER_EMAIL` and **Save**. Wait until the panel closes, then reload and confirm the address is listed. Leaving the page while the panel is open loses the entry.
+6. **Clients > Create client:** type Web application, no JavaScript origins, one redirect URI: `https://<production-domain>/api/auth/callback/google`.
+7. Copy the client ID and secret from the dialog straight into Vercel (`AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, Production, Sensitive). The secret is shown only once.
+8. Redeploy.
+
+Decisions for this client:
+
+| Decision | Reason |
+|---|---|
+| Publishing status stays **Testing**, with the owner as the only test user | One user. Google then blocks every other account before it reaches the app, in front of the app's own owner check. No verification by Google is needed. |
+| Scopes `openid`, `email`, `profile` only, requested by the app | Sign-in needs nothing more; Drive access runs through the service account (1.3). Google limits refresh tokens to 7 days for External apps in Testing, unless the scopes are a subset of name, email and profile. Adding a Google API scope brings that limit back. |
+| Production redirect URI only | Previews have no database and stop at the setup page, so they never sign in. For local sign-in, add `http://localhost:3000/api/auth/callback/google` deliberately. |
+| No JavaScript origins | The app uses the server-side redirect flow (Auth.js), which does not use them. |
+
+**Lost secret or rotation.** Open **Clients > your client**, add a new client secret, replace `AUTH_GOOGLE_SECRET` in Vercel and redeploy. Confirm sign-in works, then disable and delete the old secret.
 
 ### 1.5 Configure and deploy
 
@@ -129,6 +147,11 @@ Use a separate Drive test folder with fixture files for local work, not the prod
 | App shows only the setup page | The settings it marks as missing or invalid | Set them in Vercel for the right environment; redeploy |
 | No new runs appear | Sync history page: last `sync_runs` status | Trigger manual sync; if it fails, check Vercel function logs for `sync.failed` and `drive.*` events (`drive.list_failed`, `drive.download_failed`, `drive.feedback_write_failed`) |
 | `drive.auth_failed` in logs | Workload identity provider and binding in Google Cloud | Check the issuer uses your team slug, the attribute condition matches your Vercel project name, and the binding subject ends in `environment:production`. A renamed Vercel project or team needs a new binding |
+| `redirect_uri_mismatch` at Google | The URI in the client differs from `https://<production-domain>/api/auth/callback/google`, or the change has not propagated | Compare exactly; Google states changes can take 5 minutes to a few hours |
+| `access_denied`, app is in testing | The account is not a test user | Add it under Audience, or sign in with the owner account |
+| `invalid_client` | Wrong client ID or secret, or stray whitespace | Enter both again in Vercel and redeploy |
+| Google sign-in succeeds, the app refuses | `OWNER_EMAIL` differs from the Google account address | Compare the two |
+| New variable values have no effect | No deployment since the change | Redeploy production |
 | Run files present in Drive but not in reader | Ingest errors page | Fix the agent prompt for invalid JSON; mark error resolved; re-sync |
 | Agent shows `missing` slots | Scheduled task list in Claude; Drive folder for that day | If the task did not fire: re-enable or fire it manually. If it fired without a JSON file: check its session output |
 | Feedback stays `published` | Agent run JSON `feedback_consumed` | Check the agent prompt still contains the feedback step |
