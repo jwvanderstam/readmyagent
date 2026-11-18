@@ -14,11 +14,27 @@ Order matters; each step produces a value a later step needs. A `gcloud` setup s
 
 ### 1.2 Vercel and Neon
 
-1. Import your fork in Vercel (Hobby). Note your **team slug** (from the team URL) and the **project name**. Google Cloud needs both in step 1.3.
-2. Settings, Security, **Secure backend access with OIDC federation**: set issuer mode to **Team**.
-3. Add **Neon** from the Vercel Marketplace and link it to the project. This injects `DATABASE_URL` per environment.
-4. Preview databases must not contain production data. In the Neon integration, either turn off automatic preview branches or make previews branch from a separate development branch that holds fixture data only.
-5. Keep **Deployment Protection** on for preview deployments.
+Vercel project:
+
+1. **Add New > Project**, import your fork. Keep the detected Next.js settings and deploy. The first deployment shows only the setup page: the app stays closed until its configuration is complete.
+2. Note the **team slug** (from the dashboard URL), the **project name** and the **production URL**. Google Cloud needs the first two in step 1.3, the OAuth client the third in step 1.4.
+3. **Settings > Build and Deployment > Node.js Version**: set **22.x**, the version in `package.json` `engines`. A different value is overridden by `engines` and shows an override warning.
+4. **Settings > Security > Secure Backend Access with OIDC Federation**: Issuer Mode **Team**.
+5. **Settings > Deployment Protection**: keep Vercel Authentication on (Standard Protection).
+
+Neon database, through **Storage > Create Database > Neon**:
+
+1. Region close to you (for example Frankfurt `fra1`), plan Free. Turn **Neon Auth** and **Realtime** off: the app signs in through Google (step 1.4) and does not use them.
+2. In **Connect a Project**:
+   - Environments: **Production only**. With Preview connected, previews would use the production database.
+   - Create database branch for deployment: **off** for both.
+   - Custom prefix: **`DATABASE`**. The default `STORAGE` creates `STORAGE_URL`, which the app does not read.
+   - Sensitive: **on**.
+3. Check that `DATABASE_URL` and `DATABASE_URL_UNPOOLED` appear under Environment Variables with scope Production, then redeploy. Variable changes apply only to new deployments.
+
+Consequences: preview deployments have no database and stop at the setup page; the Development environment gets no database either (section 3).
+
+Vercel Hobby is for personal, non-commercial use. An instance used for work needs a Pro team.
 
 ### 1.3 Google Cloud: Drive access without a key
 
@@ -68,7 +84,7 @@ Do not create a key for the service account. The key-based setup (ADR-0006) is a
 ### 1.5 Configure and deploy
 
 1. In Vercel, set the environment variables from section 2. Mark every secret as **Sensitive**. Set production values for the Production environment only.
-2. Deploy. Run migrations: `pnpm db:migrate` against production from CI or locally with the production URL.
+2. Deploy. Production builds apply pending migrations first (`vercel.json` `buildCommand`, `scripts/migrate.mjs`, over `DATABASE_URL_UNPOOLED`). A failed migration fails the build, so the previous deployment stays live. Preview builds skip this step.
 3. Open the app. If a required setting is missing or invalid, the app shows only its setup page, which lists per setting whether it is configured.
 
 ## 2. Environment variables
@@ -98,9 +114,11 @@ Do not create a key for the service account. The key-based setup (ADR-0006) is a
 pnpm install
 vercel link                  # once, links the folder to your Vercel project
 vercel env pull .env.local   # development values, including a short-lived VERCEL_OIDC_TOKEN
-pnpm db:migrate              # against a Neon development branch, never production
+node --env-file=.env.local scripts/migrate.mjs   # the dev branch below, never production
 pnpm dev
 ```
+
+The database integration is connected to Production only, so `vercel env pull` brings no database. Create a branch `dev` in the Neon console (from an empty state or with fixture data only) and set its connection string as `DATABASE_URL` for the **Development** environment in Vercel. Never copy production values to your machine.
 
 Use a separate Drive test folder with fixture files for local work, not the production folder. Grant it to the `development` environment subject, or use the `GOOGLE_SA_KEY` fallback with a key for a test-only service account.
 
