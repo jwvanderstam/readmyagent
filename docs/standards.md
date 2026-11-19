@@ -12,7 +12,7 @@ These standards apply to all code and documentation in this repository. A pull r
 | Framework | Next.js App Router. Server Components by default; `"use client"` only where interaction requires it. |
 | Formatting | Prettier, default config plus `printWidth: 100`. Enforced in CI. |
 | Linting | ESLint with `next/core-web-vitals` and `@typescript-eslint/recommended-type-checked`. Zero warnings in CI. |
-| Styling | Tailwind CSS with shadcn/ui components. No inline style objects except for dynamic values. |
+| Styling | Tailwind CSS. Small presentational components live in `components/`; shadcn/ui is added per component when one needs behaviour that is hard to get right (dialogs, menus). No inline style objects except for dynamic values. |
 | Validation | Zod for every external input. Types are inferred from schemas, not duplicated. |
 | Database | Drizzle ORM and drizzle-kit migrations. No raw SQL string building; parameterized queries only. |
 | Dependencies | Add only with a reason in the PR. Prefer platform and framework features. Renovate or Dependabot weekly. |
