@@ -6,9 +6,11 @@ import { agentSlugSchema } from "@/lib/contract";
 import { requireOwner } from "@/lib/auth";
 import { getConfig } from "@/lib/config";
 import { getDb } from "@/lib/db/client";
+import { canWithdraw } from "@/lib/feedback";
 import { formatDateTime } from "@/lib/format";
 import { HEALTH_WINDOW_DAYS } from "@/lib/health";
-import { getAgentDetail } from "@/lib/reader/agents";
+import { getAgentDetail, listRules } from "@/lib/reader/agents";
+import { RuleForm, WithdrawButton } from "../../feedback-form";
 import { AgentForm } from "../agent-form";
 
 export const metadata: Metadata = { title: "Agent · readmyagent" };
@@ -29,10 +31,11 @@ export default async function AgentPage({ params }: Props) {
   const { slug } = await params;
   if (!agentSlugSchema.safeParse(slug).success) notFound();
   const { timezone } = getConfig();
-  const detail = await getAgentDetail(getDb(), slug, {
-    now: new Date(),
-    defaultTimezone: timezone,
-  });
+  const db = getDb();
+  const [detail, rules] = await Promise.all([
+    getAgentDetail(db, slug, { now: new Date(), defaultTimezone: timezone }),
+    listRules(db, slug),
+  ]);
   if (!detail) notFound();
   const { agent, health, runs } = detail;
 
@@ -96,6 +99,31 @@ export default async function AgentPage({ params }: Props) {
           )}
         </section>
       )}
+
+      <section className="mt-6">
+        <h2 className="text-sm font-semibold">Rules</h2>
+        {rules.length === 0 ? (
+          <p className="mt-1 text-sm text-neutral-600">No rules yet.</p>
+        ) : (
+          <ul className="mt-1 space-y-2">
+            {rules.map((rule) => (
+              <li key={rule.id} className="text-sm">
+                <p className="break-words whitespace-pre-line">{rule.note}</p>
+                <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                  <StatusBadge status={rule.status} />
+                  <span className="text-neutral-600">
+                    {formatDateTime(rule.createdAt, timezone)}
+                  </span>
+                  {canWithdraw(rule.status) && <WithdrawButton feedbackId={rule.id} />}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="mt-3 rounded border border-neutral-200 p-3">
+          <RuleForm agentSlug={agent.slug} />
+        </div>
+      </section>
 
       <section className="mt-6">
         <h2 className="text-sm font-semibold">Runs</h2>

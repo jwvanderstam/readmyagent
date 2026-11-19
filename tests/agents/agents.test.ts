@@ -3,9 +3,9 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { AgentError, createAgent, scheduleProblem, updateAgent } from "@/lib/agents/manage";
 import type { Db } from "@/lib/db";
 import { schema } from "@/lib/db";
-import { createFeedback, publishFeedback } from "@/lib/feedback";
+import { createFeedback, publishFeedback, withdrawFeedback } from "@/lib/feedback";
 import { ingestRunFile } from "@/lib/ingest";
-import { getAgentDetail, getRunDetail, listAgents } from "@/lib/reader/agents";
+import { getAgentDetail, getRunDetail, listAgents, listRules } from "@/lib/reader/agents";
 import { createTestDb } from "../helpers/test-db";
 
 const { agents, runs, items, syncRuns } = schema;
@@ -191,5 +191,19 @@ describe("agent views", () => {
     expect(run!.items.map((i) => i.title)).toEqual(["F 17"]);
     expect(run!.consumed).toEqual([{ id: fb.id, type: "dismiss", note: null, itemId: item!.id }]);
     expect(await getRunDetail(db, "00000000-0000-4000-8000-000000000000")).toBeNull();
+  });
+
+  it("lists an agent's rules newest first, without withdrawn ones", async () => {
+    const rule = (note: string, at: string) =>
+      createFeedback(db, { agentSlug: "mail-triage", type: "rule", note }, new Date(at));
+    await rule("Old rule.", "2026-11-16T08:00:00Z");
+    const gone = await rule("Withdrawn rule.", "2026-11-17T08:00:00Z");
+    await rule("New rule.", "2026-11-18T08:00:00Z");
+    await createFeedback(db, { agentSlug: "weekbrief", type: "rule", note: "Other agent." }, NOW);
+    await withdrawFeedback(db, gone.id);
+
+    const rules = await listRules(db, "mail-triage");
+
+    expect(rules.map((r) => r.note)).toEqual(["New rule.", "Old rule."]);
   });
 });

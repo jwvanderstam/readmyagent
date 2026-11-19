@@ -15,3 +15,9 @@ export {
   type PublishResult,
 } from "./publish";
 export { reconcileConsumedFeedback } from "./reconcile";
+export {
+  canWithdraw,
+  feedbackOptionsFor,
+  ITEM_FEEDBACK_OPTIONS,
+  type ItemFeedbackType,
+} from "./options";

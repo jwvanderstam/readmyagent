@@ -87,3 +87,4 @@ export type RunFile = z.infer<typeof runFileSchema>;
 export type RunItem = z.infer<typeof runItemSchema>;
 export type FeedbackFile = z.infer<typeof feedbackFileSchema>;
 export type FeedbackEntry = z.infer<typeof feedbackEntrySchema>;
+export type FeedbackType = (typeof FEEDBACK_TYPES)[number];
