@@ -39,6 +39,9 @@ export default async function ReaderLayout({ children }: { children: ReactNode }
           <Link href="/" className="text-sm underline-offset-4 hover:underline">
             Inbox
           </Link>
+          <Link href="/agents" className="text-sm underline-offset-4 hover:underline">
+            Agents
+          </Link>
         </nav>
         <form action={signOutAction}>
           <button

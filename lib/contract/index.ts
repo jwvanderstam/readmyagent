@@ -3,10 +3,12 @@ import { z } from "zod";
 // Zod mirrors of the JSON Schemas in /schemas, which stay the normative source.
 // tests/contract/zod-parity.test.ts checks that both accept and reject the same documents.
 
-const slug = z
+/** Agent slug, as in `agent` of a run file. Also validates slugs entered in the app. */
+export const agentSlugSchema = z
   .string()
   .max(64)
   .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/);
+const slug = agentSlugSchema;
 const contractVersion = z.string().regex(/^1\.[0-9]+$/);
 const dateTime = z.iso.datetime({ offset: true });
 const feedbackId = z.string().regex(/^fb_[A-Za-z0-9]+$/);

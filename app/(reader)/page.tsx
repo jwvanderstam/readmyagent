@@ -46,11 +46,19 @@ export default async function InboxPage({ searchParams }: Props) {
 
       {rows.length === 0 ? (
         <p className="py-8 text-center text-neutral-600">
-          {agentCount === 0
-            ? "No agents are registered yet, so there is nothing to read."
-            : view === "open"
-              ? "Nothing open. All findings are handled."
-              : "No items here."}
+          {agentCount === 0 ? (
+            <>
+              No agents are registered yet.{" "}
+              <Link href="/agents/new" className="underline">
+                Add your first agent
+              </Link>
+              .
+            </>
+          ) : view === "open" ? (
+            "Nothing open. All findings are handled."
+          ) : (
+            "No items here."
+          )}
         </p>
       ) : (
         <ul className="divide-y divide-neutral-200">

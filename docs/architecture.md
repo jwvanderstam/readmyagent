@@ -106,6 +106,9 @@ readmyagent
 │   ├── feedback/           Build and publish feedback.json, reconcile consumption
 │   ├── health/             Expected-run calculation and health status
 │   ├── db/                 Drizzle schema, migrations, queries
+│   ├── agents/             Register and change agents, schedule checks
+│   ├── items/              Item state machine
+│   ├── reader/             Read queries for the reader UI
 │   ├── auth/               Auth.js config and owner allowlist
 │   └── contract/           Zod mirrors of /schemas, kept in parity by tests
 └── schemas/                JSON Schemas for the agent contract (source of truth)
