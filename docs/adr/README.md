@@ -12,3 +12,4 @@ Format: [Michael Nygard](https://cognitect.com/blog/2011/11/15/documenting-archi
 | [0006](0006-drive-service-account.md) | Drive access with a service account, updates only | Superseded by 0008 |
 | [0007](0007-self-hosted-instance-per-user.md) | One self-hosted instance per user | Accepted |
 | [0008](0008-drive-access-workload-identity-federation.md) | Drive access through Workload Identity Federation, no service account key | Accepted |
+| [0009](0009-agents-register-from-run-files.md) | Agents register and update themselves from their run files | Accepted |

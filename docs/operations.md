@@ -116,7 +116,7 @@ Decisions for this client:
    It signs you in to Vercel, asks for the OAuth client ID and secret without showing the secret, generates `AUTH_SECRET` and `CRON_SECRET` without showing them, sets all variables except `DATABASE_URL` for Production (overwriting existing values), and redeploys. No secret is written to disk beyond a temporary file deleted right after use.
 2. Deploy. Production builds apply pending migrations first (`vercel.json` `buildCommand`, `scripts/migrate.mjs`, over `DATABASE_URL_UNPOOLED`). A failed migration fails the build, so the previous deployment stays live. Preview builds skip this step.
 3. Open the app. If a required setting is missing or invalid, the app shows only its setup page, which lists per setting whether it is configured.
-4. Register your agents under **Agents > Add agent**, one per scheduled task:
+4. Agents that write `agent_name` and `schedule` in their run files (contract 1.1) register themselves at the first sync after their first run. Nothing to do. For an agent that does not, register it under **Agents > Add agent**:
    - **Slug:** exactly the `agent` value the task writes in its run files. It cannot be changed later; run files with an unknown slug become ingest errors.
    - **Schedule:** the cron expression of the scheduled task, with `CRON_TZ=<zone>` in front when it runs in a specific timezone. At most hourly.
    - **Grace window:** how long after its time a run may arrive before health shows it as missing (default 180 minutes).
@@ -178,13 +178,15 @@ Use a separate Drive test folder with fixture files for local work, not the prod
 
 ## 5. Agent changes
 
-Each scheduled agent needs three additions to its prompt to participate (phase 1):
+Each scheduled agent needs four additions to its prompt to participate (phase 1):
 
 1. At the start: read `feedback.json` (ID in `DRIVE_FEEDBACK_FILE_ID`) and apply entries addressed to it, following contract section 3.3.
 2. At the end: write the run JSON file following the contract, in addition to the Markdown log, also on failure.
 3. List applied feedback IDs in `feedback_consumed`.
 
-Agents are registered in the app (name, slug, schedule), not in code.
+4. Write `agent_name` and `schedule` in the run JSON, with the schedule exactly as the task runs. The agent then registers itself, and a changed schedule reaches the app with its next run (ADR-0009).
+
+Agents are registered in the app, by their own run files or by hand, not in code.
 
 ## 6. Updating your instance
 

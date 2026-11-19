@@ -61,6 +61,9 @@ export const runFileSchema = z.looseObject({
   }),
   feedback_consumed: z.array(feedbackId),
   log_file: z.string().max(256).optional(),
+  // Contract 1.1: the agent describes itself, so the reader can register and update it (ADR-0009).
+  agent_name: z.string().min(1).max(100).optional(),
+  schedule: z.string().min(1).max(200).optional(),
 });
 
 export const feedbackEntrySchema = z.strictObject({

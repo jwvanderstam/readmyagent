@@ -106,7 +106,7 @@ readmyagent
 │   ├── feedback/           Build and publish feedback.json, reconcile consumption
 │   ├── health/             Expected-run calculation and health status
 │   ├── db/                 Drizzle schema, migrations, queries
-│   ├── agents/             Register and change agents, schedule checks
+│   ├── agents/             Register and change agents, schedule checks, self-registration
 │   ├── items/              Item state machine
 │   ├── reader/             Read queries for the reader UI
 │   ├── auth/               Auth.js config and owner allowlist

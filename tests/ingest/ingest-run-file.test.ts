@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { RunFile, RunItem } from "@/lib/contract";
 import type { Db } from "@/lib/db";
 import { schema } from "@/lib/db";
+import { MAX_AGENTS } from "@/lib/agents/register";
 import { ingestRunFile, type RunFileInput } from "@/lib/ingest";
 import { createTestDb } from "../helpers/test-db";
 
@@ -129,6 +130,82 @@ describe("ingestRunFile", () => {
     expect(outcome.status).toBe("invalid");
     expect(outcome.status === "invalid" && outcome.message).toMatch(/Unknown agent "rogue-agent"/);
     expect(await db.$count(runs)).toBe(0);
+  });
+
+  it("registers an unknown agent that declares its schedule", async () => {
+    const outcome = await ingest(
+      file(
+        runDoc(18, {
+          agent: "new-agent",
+          run_id: "new-agent-2026-11-18-0700",
+          agent_name: "New agent",
+          schedule: "CRON_TZ=Europe/Amsterdam 0 7 * * *",
+        }),
+      ),
+    );
+
+    expect(outcome.status).toBe("ingested");
+    const [agent] = await db.select().from(agents).where(eq(agents.slug, "new-agent"));
+    expect(agent).toMatchObject({
+      name: "New agent",
+      schedule: "CRON_TZ=Europe/Amsterdam 0 7 * * *",
+      graceMinutes: 180,
+      active: true,
+      createdAt: new Date("2026-11-18T06:00:00Z"),
+    });
+  });
+
+  it("names a registered agent after its slug when it declares no name", async () => {
+    await ingest(file(runDoc(18, { agent: "new-agent", schedule: "0 7 * * *" })));
+    const [agent] = await db.select().from(agents).where(eq(agents.slug, "new-agent"));
+    expect(agent?.name).toBe("new-agent");
+  });
+
+  it("does not register an agent with an unusable schedule or over the limit", async () => {
+    const bad = await ingest(file(runDoc(18, { agent: "new-agent", schedule: "*/5 * * * *" })));
+    expect(bad.status === "invalid" && bad.message).toMatch(/unusable schedule/);
+
+    await db.insert(agents).values(
+      Array.from({ length: MAX_AGENTS - 2 }, (_, i) => ({
+        slug: `filler-${i}`,
+        name: `Filler ${i}`,
+        schedule: "0 7 * * *",
+      })),
+    );
+    const full = await ingest(
+      file(runDoc(18, { agent: "one-more", schedule: "0 7 * * *" }), "file-2"),
+    );
+    expect(full.status === "invalid" && full.message).toMatch(/limit of 20 agents/);
+    expect(await db.$count(agents)).toBe(MAX_AGENTS);
+  });
+
+  it("updates name and schedule from the newest run only", async () => {
+    const declare = (day: number, name: string, hour: number) =>
+      ingest(
+        file(
+          runDoc(day, { agent_name: name, schedule: `CRON_TZ=Europe/Amsterdam 0 ${hour} * * *` }),
+          `file-${day}`,
+        ),
+      );
+    const agent = async () =>
+      (await db.select().from(agents).where(eq(agents.slug, "test-agent")))[0]!;
+
+    await declare(17, "Renamed", 9);
+    expect(await agent()).toMatchObject({
+      name: "Renamed",
+      schedule: "CRON_TZ=Europe/Amsterdam 0 9 * * *",
+    });
+
+    // An older file ingested late does not roll the change back.
+    await declare(16, "Old name", 6);
+    expect(await agent()).toMatchObject({ name: "Renamed" });
+
+    // An unusable schedule is ignored; the declared name still applies.
+    await ingest(file(runDoc(18, { agent_name: "Newest", schedule: "*/5 * * * *" }), "file-18"));
+    expect(await agent()).toMatchObject({
+      name: "Newest",
+      schedule: "CRON_TZ=Europe/Amsterdam 0 9 * * *",
+    });
   });
 
   it("rejects a second file that reuses a run ID", async () => {

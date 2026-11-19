@@ -1,6 +1,6 @@
 # Agent contract
 
-Version 1.0. This document defines what an agent writes and reads so that readmyagent can process it. The JSON Schemas in [`/schemas`](../schemas) are the normative source; this document explains them.
+Version 1.1. This document defines what an agent writes and reads so that readmyagent can process it. The JSON Schemas in [`/schemas`](../schemas) are the normative source; this document explains them.
 
 ## 1. Overview
 
@@ -20,8 +20,10 @@ Schema: [`schemas/agent-run.schema.json`](../schemas/agent-run.schema.json)
 
 ```json
 {
-  "contract_version": "1.0",
+  "contract_version": "1.1",
   "agent": "mail-triage",
+  "agent_name": "Mail triage",
+  "schedule": "CRON_TZ=Europe/Amsterdam 48 6 * * *",
   "run_id": "mail-triage-2026-11-18-0648",
   "started_at": "2026-11-18T06:48:12+01:00",
   "finished_at": "2026-11-18T06:53:40+01:00",
@@ -57,8 +59,10 @@ Schema: [`schemas/agent-run.schema.json`](../schemas/agent-run.schema.json)
 
 | Field | Required | Meaning |
 |---|---|---|
-| `contract_version` | yes | Contract version the file follows. Currently `1.0`. |
-| `agent` | yes | Agent slug, lowercase kebab case. Must match a configured agent. |
+| `contract_version` | yes | Contract version the file follows. Currently `1.1`; `1.0` files stay valid. |
+| `agent` | yes | Agent slug, lowercase kebab case. Must match a registered agent, unless the file declares `schedule`. |
+| `agent_name` | no (1.1) | Display name of the agent, max 100 characters. The reader shows it and updates it from the newest run. Without it, a self-registered agent is named after its slug. |
+| `schedule` | no (1.1) | Cron expression of the scheduled task, with `CRON_TZ=<zone>` in front for its timezone, max 200 characters. At most hourly. Lets the reader register an unknown agent and keep its schedule current (ADR-0009). Write the same schedule the task runs on. |
 | `run_id` | yes | Unique per run. Convention: `<agent>-<YYYY-MM-DD>-<HHMM>`. |
 | `started_at`, `finished_at` | yes | ISO 8601 with offset. |
 | `status` | yes | `ok`: completed as intended. `warning`: completed with issues worth attention. `failed`: did not complete its task. |
@@ -143,7 +147,9 @@ Every type except `rule` refers to an item and carries its fingerprint in `targe
 
 ## 4. How the reader handles run files
 
-- Invalid JSON, a contract violation, an unknown agent, an unsupported major version, or a `run_id` already used by another file: the file is not ingested and appears as an ingest error with the reason. It is retried on every sync until fixed; there is one open error per file.
+- An unknown agent whose file declares a usable `schedule` is registered, with `agent_name` as its name, and the file is ingested. At most 20 agents can exist.
+- A known agent takes `agent_name` and a usable `schedule` from its newest run. A file older than the newest ingested run changes nothing; an unusable schedule is ignored.
+- Invalid JSON, a contract violation, an unknown agent without a usable `schedule`, an unsupported major version, or a `run_id` already used by another file: the file is not ingested and appears as an ingest error with the reason. It is retried on every sync until fixed; there is one open error per file.
 - A fingerprint that appears twice in one run counts as one item; the last occurrence wins.
 - A finding seen again links to the existing item. Its content follows the most recent run by `started_at`, also when files arrive out of order. An item marked `done` reopens when it reappears; `acknowledged` and `dismissed` stay.
 - `feedback_consumed` marks feedback consumed only when it was published and addressed to the same agent. Other IDs are ignored.
