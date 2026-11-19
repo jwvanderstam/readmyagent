@@ -1,6 +1,8 @@
 {
-  "contract_version": "1.0",
+  "contract_version": "1.1",
   "agent": "mail-triage",
+  "agent_name": "Mail triage",
+  "schedule": "CRON_TZ=Europe/Amsterdam 48 6 * * *",
   "run_id": "mail-triage-2026-11-18-0648",
   "started_at": "2026-11-18T06:48:12+01:00",
   "finished_at": "2026-11-18T06:53:40+01:00",

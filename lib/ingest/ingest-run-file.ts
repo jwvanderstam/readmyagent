@@ -1,4 +1,5 @@
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import { applyDeclaredAgentFields, registerAgentFromRun } from "@/lib/agents/register";
 import type { RunFile, RunItem } from "@/lib/contract";
 import type { Db, Tx } from "@/lib/db";
 import { schema } from "@/lib/db";
@@ -44,19 +45,17 @@ export async function ingestRunFile(
   if (!parsed.ok) return recordIngestError(db, file, ctx.syncRunId, parsed.message, now());
   const run = parsed.run;
 
-  // T4 in SECURITY.md: only configured agents are ingested.
+  // T4 in SECURITY.md: only registered agents are ingested. An unknown agent registers itself when
+  // its run file declares a usable schedule (ADR-0009).
   const [agent] = await db
     .select({ slug: agents.slug })
     .from(agents)
     .where(eq(agents.slug, run.agent));
   if (!agent) {
-    return recordIngestError(
-      db,
-      file,
-      ctx.syncRunId,
-      `Unknown agent "${run.agent}". Register the agent in the app before its runs can be ingested.`,
-      now(),
-    );
+    const registered = await registerAgentFromRun(db, run, now());
+    if (!registered.ok) {
+      return recordIngestError(db, file, ctx.syncRunId, registered.message, now());
+    }
   }
 
   const result = await db.transaction(async (tx) => {
@@ -89,6 +88,7 @@ export async function ingestRunFile(
       } as const;
     }
 
+    await applyDeclaredAgentFields(tx, run, now());
     const itemCount = await upsertItems(tx, run, inserted.id, now());
     const feedbackConsumed = await reconcileConsumedFeedback(
       tx,

@@ -96,7 +96,7 @@ export function AgentForm({ mode, initial, defaultTimezone }: Props) {
       <Field
         name="schedule"
         label="Schedule"
-        hint={`Cron expression of the scheduled task. Add CRON_TZ=<zone> in front for its timezone; without it, ${defaultTimezone} applies.`}
+        hint={`Cron expression of the scheduled task. Add CRON_TZ=<zone> in front for its timezone; without it, ${defaultTimezone} applies. An agent that declares its schedule in its run files overwrites this on its next run.`}
         error={e.schedule}
       >
         {(describedBy) => (
