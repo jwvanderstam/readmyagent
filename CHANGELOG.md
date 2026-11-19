@@ -10,6 +10,7 @@ All notable changes to this project are documented here. Format: [Keep a Changel
 - CI workflow `ci`: format, lint, typecheck, tests, dependency audit and build.
 - Contract tests that validate all examples in `schemas/examples` and `docs/agent-contract.md` against the JSON Schemas.
 - Dependabot version updates for npm and GitHub Actions.
+- CodeQL code scanning (`security-extended`) for TypeScript and the workflows, on every pull request, on `main` and weekly.
 - Database schema and initial migration for agents, runs, items, feedback, actions, sync runs and ingest errors. The sync lock is enforced by a partial unique index.
 - CI check that fails when the schema changes without a committed migration.
 - Ingestion of run files: validation against the contract, idempotent storage per Drive file, item deduplication by fingerprint, ingest errors for invalid files, and feedback consumption from `feedback_consumed`.

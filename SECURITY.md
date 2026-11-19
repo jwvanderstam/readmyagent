@@ -34,7 +34,7 @@ For the project:
 | T4 | Forged run files in the Drive folder | Folder shared only with the owner and the service account. Ingest validates schema and agent slug against the configured agents. Unknown agents are recorded as ingest errors, not ingested |
 | T5 | Cron endpoint abused to trigger load | Bearer `CRON_SECRET` required; sync lock prevents concurrent runs |
 | T6 | Leaked secrets | No long-lived Google credential: Drive access through Workload Identity Federation (ADR-0008). Remaining secrets only in Vercel environment variables, marked Sensitive. Secret scanning with push protection and a secret scan in CI. Never in logs. See [secret handling](#secret-handling) |
-| T7 | Vulnerable dependencies | Dependabot, `pnpm audit` in CI, lockfile committed |
+| T7 | Vulnerable dependencies or code | Dependabot, `pnpm audit` in CI, lockfile committed; CodeQL code scanning on every pull request and weekly |
 | T8 | Data loss of owner-owned state | Weekly backup of feedback, actions, item states and agents; runs and items can be rebuilt from Drive |
 | T9 | CSRF on mutations | Server Actions and Auth.js built-in CSRF protection; `SameSite=Lax` session cookies |
 | T10 | Preview deployments expose production data or credentials | Workload Identity Federation grants Drive access to the `production` environment only. Previews use their own database branch without production data and a test Drive folder. Vercel Deployment Protection stays on for previews |

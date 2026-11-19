@@ -80,6 +80,7 @@ See [SECURITY.md](../SECURITY.md). Minimum rules for every change:
 - GitHub Actions are pinned to a commit SHA and declare minimal `permissions`.
 - Agent-produced text is rendered with the shared `SafeMarkdown` component only.
 - New dependencies are checked with `pnpm audit` in CI.
+- CodeQL scans every pull request. New alerts are fixed or dismissed with a reason before merge.
 
 ## 9. Documentation
 
