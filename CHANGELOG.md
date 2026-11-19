@@ -35,6 +35,7 @@ All notable changes to this project are documented here. Format: [Keep a Changel
 
 ### Changed
 
+- GitHub Actions pinned to commit SHAs: `actions/checkout` v7.0.1, `actions/setup-node` v7.1.0, `pnpm/action-setup` v6.1.1.
 - Operations guide rewritten for owners of their own instance: Workload Identity Federation instead of a service account key, preview isolation, updating by release tag.
 - Security model extended with secret handling rules, preview isolation and supply chain threats.
 - Agents are managed in the app instead of `config/agents.ts`.
