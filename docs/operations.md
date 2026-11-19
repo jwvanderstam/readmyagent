@@ -102,6 +102,18 @@ Decisions for this client:
 ### 1.5 Configure and deploy
 
 1. In Vercel, set the environment variables from section 2. Mark every secret as **Sensitive**. Set production values for the Production environment only.
+
+   Or let `scripts/set-vercel-env.ps1` do it (PowerShell 7 and Node.js, Windows, macOS or Linux). Run it in your own terminal, never through an AI assistant, because you type the OAuth secret into it:
+
+   ```powershell
+   pwsh -ExecutionPolicy Bypass -File scripts/set-vercel-env.ps1 `
+     -Team <team> -Project <vercel-project> -OwnerEmail <you@example.com> `
+     -DriveFolderId <folder-id> -FeedbackFileId <feedback-file-id> `
+     -GcpProjectNumber <project-number> `
+     -ServiceAccountEmail readmyagent-drive@<project-id>.iam.gserviceaccount.com
+   ```
+
+   It signs you in to Vercel, asks for the OAuth client ID and secret without showing the secret, generates `AUTH_SECRET` and `CRON_SECRET` without showing them, sets all variables except `DATABASE_URL` for Production (overwriting existing values), and redeploys. No secret is written to disk beyond a temporary file deleted right after use.
 2. Deploy. Production builds apply pending migrations first (`vercel.json` `buildCommand`, `scripts/migrate.mjs`, over `DATABASE_URL_UNPOOLED`). A failed migration fails the build, so the previous deployment stays live. Preview builds skip this step.
 3. Open the app. If a required setting is missing or invalid, the app shows only its setup page, which lists per setting whether it is configured.
 
