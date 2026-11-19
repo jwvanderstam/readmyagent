@@ -1,4 +1,4 @@
-import { count, desc, eq, max } from "drizzle-orm";
+import { and, count, desc, eq, max, ne } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { schema } from "@/lib/db";
 import { type AgentHealth, loadHealth } from "@/lib/health";
@@ -51,6 +51,21 @@ export async function getAgentDetail(db: Db, slug: string, opts: Opts & { runLim
   ]);
 
   return { agent, runs: recentRuns, health: health.find((h) => h.slug === slug) ?? null };
+}
+
+/** The agent's standing rules, newest first. Withdrawn rules are left out. */
+export function listRules(db: Db, slug: string) {
+  return db
+    .select()
+    .from(feedback)
+    .where(
+      and(
+        eq(feedback.agentSlug, slug),
+        eq(feedback.type, "rule"),
+        ne(feedback.status, "withdrawn"),
+      ),
+    )
+    .orderBy(desc(feedback.createdAt));
 }
 
 export type AgentDetail = NonNullable<Awaited<ReturnType<typeof getAgentDetail>>>;

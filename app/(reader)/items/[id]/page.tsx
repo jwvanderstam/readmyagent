@@ -6,11 +6,13 @@ import { SeverityBadge, StatusBadge } from "@/components/badges";
 import { SafeMarkdown } from "@/components/safe-markdown";
 import { requireOwner } from "@/lib/auth";
 import { getConfig } from "@/lib/config";
+import { canWithdraw, feedbackOptionsFor } from "@/lib/feedback";
 import { getDb } from "@/lib/db/client";
 import { formatDateTime, safeHttpUrl } from "@/lib/format";
 import { allowedTransitions, type ItemState } from "@/lib/items/state";
 import { getItemDetail } from "@/lib/reader/queries";
 import { setItemStateAction } from "../../actions";
+import { ItemFeedbackForm, WithdrawButton } from "../../feedback-form";
 
 export const metadata: Metadata = { title: "Item · readmyagent" };
 
@@ -119,12 +121,20 @@ export default async function ItemPage({ params }: Props) {
                   <span className="font-medium">{fb.type.replaceAll("_", " ")}</span>
                   <StatusBadge status={fb.status} />
                   <span className="text-neutral-600">{formatDateTime(fb.createdAt, timezone)}</span>
+                  {canWithdraw(fb.status) && <WithdrawButton feedbackId={fb.id} />}
                 </div>
                 {fb.note && <p className="mt-0.5 break-words text-neutral-700">{fb.note}</p>}
               </li>
             ))}
           </ul>
         )}
+        <div className="mt-3 rounded border border-neutral-200 p-3">
+          <ItemFeedbackForm
+            agentSlug={item.agentSlug}
+            itemId={item.id}
+            options={feedbackOptionsFor(item)}
+          />
+        </div>
       </section>
 
       <section className="mt-6">
