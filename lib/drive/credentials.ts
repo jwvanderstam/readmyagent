@@ -1,6 +1,6 @@
 import "server-only";
 import { getVercelOidcToken } from "@vercel/oidc";
-import { type AuthClient, ExternalAccountClient, JWT } from "google-auth-library";
+import { type AuthClient, IdentityPoolClient, JWT } from "google-auth-library";
 import type { DriveCredentials } from "@/lib/config";
 
 // Drive scope, effectively limited to the one folder shared with the service account (ADR-0006).
@@ -20,7 +20,9 @@ export function createAuthClient(credentials: DriveCredentials): AuthClient {
     });
   }
   const { projectNumber, poolId, providerId, serviceAccountEmail } = credentials;
-  const client = ExternalAccountClient.fromJSON({
+  // Built in code from validated settings, so the direct constructor is used instead of
+  // ExternalAccountClient.fromJSON, which exists for untrusted credential files.
+  return new IdentityPoolClient({
     type: "external_account",
     audience: `//iam.googleapis.com/projects/${projectNumber}/locations/global/workloadIdentityPools/${poolId}/providers/${providerId}`,
     subject_token_type: "urn:ietf:params:oauth:token-type:jwt",
@@ -29,6 +31,4 @@ export function createAuthClient(credentials: DriveCredentials): AuthClient {
     subject_token_supplier: { getSubjectToken: () => getVercelOidcToken() },
     scopes: DRIVE_SCOPES,
   });
-  if (!client) throw new Error("Could not create the Workload Identity Federation client.");
-  return client;
 }

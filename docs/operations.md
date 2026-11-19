@@ -24,7 +24,7 @@ Vercel project:
 
 Neon database, through **Storage > Create Database > Neon**:
 
-1. Region close to you (for example Frankfurt `fra1`), plan Free. Turn **Neon Auth** and **Realtime** off: the app signs in through Google (step 1.4) and does not use them.
+1. Region close to you (for example Frankfurt `fra1`), plan Free. Functions run in the region set in `vercel.json` (`regions`, default `fra1`); if you choose another database region, set the same one there, or every query crosses an ocean. Turn **Neon Auth** and **Realtime** off: the app signs in through Google (step 1.4) and does not use them.
 2. In **Connect a Project**:
    - Environments: **Production only**. With Preview connected, previews would use the production database.
    - Create database branch for deployment: **off** for both.
