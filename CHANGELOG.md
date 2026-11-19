@@ -18,6 +18,7 @@ All notable changes to this project are documented here. Format: [Keep a Changel
 - Configuration validation with a setup page: until all required settings are valid, every page shows only the setup page and API routes answer 503. The page lists names and statuses, never values.
 - Sign-in with Google, restricted to the owner's verified address. Every page and API route except sign-in, setup, health and cron requires the owner's session.
 - Security headers, including a Content Security Policy with a per-request nonce.
+- Agents managed in the app: add and edit with slug and schedule checks (at most hourly, known timezone), deactivate instead of delete. Agent pages with 14-day health, missing and failed slots, unconsumed feedback, and a timeline of runs. Run pages with summary, verification, metrics, items, applied feedback and a link to the log in Drive.
 - Reader: inbox with open, acknowledged and closed items (most severe first), item detail with state changes, source and history, sync button and sync status, sync on opening the app. Agent text is rendered with `SafeMarkdown`: no raw HTML, no images, only http(s) links.
 - `scripts/set-vercel-env.ps1` sets all production variables in Vercel without showing a secret, then redeploys.
 - Production builds on Vercel apply database migrations before building; previews skip them.

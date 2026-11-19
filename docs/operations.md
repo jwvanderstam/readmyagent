@@ -116,6 +116,11 @@ Decisions for this client:
    It signs you in to Vercel, asks for the OAuth client ID and secret without showing the secret, generates `AUTH_SECRET` and `CRON_SECRET` without showing them, sets all variables except `DATABASE_URL` for Production (overwriting existing values), and redeploys. No secret is written to disk beyond a temporary file deleted right after use.
 2. Deploy. Production builds apply pending migrations first (`vercel.json` `buildCommand`, `scripts/migrate.mjs`, over `DATABASE_URL_UNPOOLED`). A failed migration fails the build, so the previous deployment stays live. Preview builds skip this step.
 3. Open the app. If a required setting is missing or invalid, the app shows only its setup page, which lists per setting whether it is configured.
+4. Register your agents under **Agents > Add agent**, one per scheduled task:
+   - **Slug:** exactly the `agent` value the task writes in its run files. It cannot be changed later; run files with an unknown slug become ingest errors.
+   - **Schedule:** the cron expression of the scheduled task, with `CRON_TZ=<zone>` in front when it runs in a specific timezone. At most hourly.
+   - **Grace window:** how long after its time a run may arrive before health shows it as missing (default 180 minutes).
+   Agents are deactivated, never deleted: their runs and feedback are your data.
 
 ## 2. Environment variables
 
