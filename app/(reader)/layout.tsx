@@ -68,9 +68,9 @@ export default async function ReaderLayout({ children }: { children: ReactNode }
         </span>
         {last && last.status !== "ok" && <StatusBadge status={last.status} />}
         {openErrors > 0 && (
-          <span className="font-medium text-red-800">
+          <Link href="/errors" className="font-medium text-red-800 underline underline-offset-4">
             {openErrors} file{openErrors === 1 ? "" : "s"} could not be read
-          </span>
+          </Link>
         )}
       </section>
 
