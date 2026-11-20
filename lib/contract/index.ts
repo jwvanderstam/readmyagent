@@ -25,6 +25,19 @@ export const FEEDBACK_TYPES = [
   "rule",
 ] as const;
 
+/**
+ * Feedback that holds until the owner withdraws it. It stays in feedback.json after an agent
+ * consumed it, because agents cannot keep state of their own (ADR-0010). `correct` and `incorrect`
+ * are one-off and leave the file once consumed.
+ */
+export const STANDING_FEEDBACK_TYPES = [
+  "keep_sender",
+  "archive_sender",
+  "knowledge_sender",
+  "dismiss",
+  "rule",
+] as const satisfies readonly (typeof FEEDBACK_TYPES)[number][];
+
 export const runItemSchema = z.looseObject({
   fingerprint: z.string().min(1).max(256),
   kind: z

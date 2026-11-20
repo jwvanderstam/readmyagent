@@ -121,7 +121,7 @@ export default async function ItemPage({ params }: Props) {
                   <span className="font-medium">{fb.type.replaceAll("_", " ")}</span>
                   <StatusBadge status={fb.status} />
                   <span className="text-neutral-600">{formatDateTime(fb.createdAt, timezone)}</span>
-                  {canWithdraw(fb.status) && <WithdrawButton feedbackId={fb.id} />}
+                  {canWithdraw(fb) && <WithdrawButton feedbackId={fb.id} />}
                 </div>
                 {fb.note && <p className="mt-0.5 break-words text-neutral-700">{fb.note}</p>}
               </li>

@@ -1,4 +1,4 @@
-import type { FeedbackType } from "@/lib/contract";
+import { type FeedbackType, STANDING_FEEDBACK_TYPES } from "@/lib/contract";
 
 /** What the owner sees when choosing feedback on an item. Mirrors agent contract section 3.2. */
 export const ITEM_FEEDBACK_OPTIONS = [
@@ -37,5 +37,10 @@ export function feedbackOptionsFor(item: { fingerprint: string; source: unknown 
   return ITEM_FEEDBACK_OPTIONS.filter((o) => aboutMail || !SENDER_TYPES.includes(o.type));
 }
 
-/** Pending and published feedback can still be withdrawn; see withdrawFeedback. */
-export const canWithdraw = (status: string) => status === "pending" || status === "published";
+/** Mirrors withdrawFeedback: anything still open, and standing feedback also after consumption. */
+export function canWithdraw(fb: { status: string; type: string }): boolean {
+  if (fb.status === "pending" || fb.status === "published") return true;
+  return (
+    fb.status === "consumed" && (STANDING_FEEDBACK_TYPES as readonly string[]).includes(fb.type)
+  );
+}

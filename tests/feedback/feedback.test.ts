@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { feedbackFileSchema } from "@/lib/contract";
 import type { Db } from "@/lib/db";
@@ -214,7 +214,7 @@ describe("publishFeedback", () => {
     );
   });
 
-  it("keeps published entries until consumed and drops consumed and withdrawn ones", async () => {
+  it("keeps standing entries after consumption and drops consumed one-off and withdrawn ones", async () => {
     const keep = await createFeedback(
       db,
       { agentSlug: "test-agent", itemId, type: "dismiss" },
@@ -233,7 +233,10 @@ describe("publishFeedback", () => {
     const writer = new MemoryWriter();
     await publishFeedback(db, writer, NOW);
 
-    await db.update(feedback).set({ status: "consumed" }).where(eq(feedback.id, consumed.id));
+    await db
+      .update(feedback)
+      .set({ status: "consumed" })
+      .where(inArray(feedback.id, [keep.id, consumed.id]));
     await withdrawFeedback(db, withdrawn.id);
     const second = await publishFeedback(db, writer, NOW);
 
@@ -260,12 +263,8 @@ describe("publishFeedback", () => {
     expect(writer.last).toMatchObject({ contract_version: "1.0", entries: [] });
   });
 
-  it("closes the loop: published, consumed by a run, gone from the next file", async () => {
-    const fb = await createFeedback(
-      db,
-      { agentSlug: "test-agent", itemId, type: "keep_sender" },
-      NOW,
-    );
+  it("closes the loop: published, consumed by a run, one-off gone from the next file", async () => {
+    const fb = await createFeedback(db, { agentSlug: "test-agent", itemId, type: "correct" }, NOW);
     const writer = new MemoryWriter();
     await publishFeedback(db, writer, NOW);
 
@@ -306,8 +305,16 @@ describe("withdrawFeedback", () => {
     expect(row?.status).toBe("withdrawn");
   });
 
-  it("refuses consumed feedback and reports unknown IDs", async () => {
+  it("withdraws consumed standing feedback", async () => {
     const fb = await createFeedback(db, { agentSlug: "test-agent", itemId, type: "dismiss" });
+    await db.update(feedback).set({ status: "consumed" }).where(eq(feedback.id, fb.id));
+    await withdrawFeedback(db, fb.id);
+    const [row] = await db.select().from(feedback);
+    expect(row?.status).toBe("withdrawn");
+  });
+
+  it("refuses consumed one-off feedback and reports unknown IDs", async () => {
+    const fb = await createFeedback(db, { agentSlug: "test-agent", itemId, type: "correct" });
     await db.update(feedback).set({ status: "consumed" }).where(eq(feedback.id, fb.id));
     await expectFeedbackError(withdrawFeedback(db, fb.id), "conflict", /consumed/);
     await expectFeedbackError(withdrawFeedback(db, "fb_unknown"), "not_found");

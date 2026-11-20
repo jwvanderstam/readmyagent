@@ -112,8 +112,11 @@ Feedback:
 
 ```
 pending -> published -> consumed
-   \           \
-    -> withdrawn  -> withdrawn   (owner withdraws; removed from feedback.json at next publish)
+   \           \            \
+    -> withdrawn  -> withdrawn  -> withdrawn   (last step: standing types only, ADR-0010)
+
+Owner withdraws; the entry is removed from feedback.json at the next publish.
+Consumed standing feedback stays in feedback.json until withdrawn (ADR-0010).
 ```
 
 Action: `todo -> doing -> done`, any state `-> dropped`.
