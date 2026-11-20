@@ -23,6 +23,10 @@ The design is agent-agnostic: any agent that follows the [agent contract](docs/a
 
 readmyagent is not a hosted service. Everyone who wants to use it deploys their own instance, on their own GitHub, Vercel, Neon and Google Cloud accounts, within the free plans. No data or secrets are shared with anyone, including the maintainers. See [ADR-0007](docs/adr/0007-self-hosted-instance-per-user.md) and the setup guide in [operations](docs/operations.md).
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fjwvanderstam%2Freadmyagent&project-name=readmyagent&repository-name=readmyagent)
+
+The button copies the repository and creates the Vercel project. The app then shows only its setup page until the database, Google sign-in and Drive access are configured: follow the [operations guide](docs/operations.md) from step 1.2.
+
 ## Status
 
 Phase 1 in progress: application scaffold and CI are in place, features follow. See [roadmap](docs/roadmap.md).
