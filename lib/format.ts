@@ -11,6 +11,15 @@ export function formatDateTime(date: Date, timeZone: string): string {
   }).format(date);
 }
 
+/** A calendar date (`YYYY-MM-DD`, no time or zone) as "30 Nov". */
+export function formatDueDate(date: string): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  }).format(new Date(`${date}T00:00:00Z`));
+}
+
 /** "just now", "5 min ago", "3 h ago", "2 days ago"; older dates as a date. */
 export function formatRelative(date: Date, now: Date, timeZone: string): string {
   const minutes = Math.round((now.getTime() - date.getTime()) / 60_000);

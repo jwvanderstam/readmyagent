@@ -8,11 +8,14 @@ import { requireOwner } from "@/lib/auth";
 import { getConfig } from "@/lib/config";
 import { canWithdraw, feedbackOptionsFor } from "@/lib/feedback";
 import { getDb } from "@/lib/db/client";
-import { formatDateTime, safeHttpUrl } from "@/lib/format";
+import { formatDateTime, formatDueDate, safeHttpUrl } from "@/lib/format";
+import { listActionsForItem } from "@/lib/actions";
 import { allowedTransitions, type ItemState } from "@/lib/items/state";
 import { getItemDetail } from "@/lib/reader/queries";
 import { setItemStateAction } from "../../actions";
 import { ItemFeedbackForm, WithdrawButton } from "../../feedback-form";
+import { ActionForm } from "../../actions/action-form";
+import { ActionStatusButtons } from "../../actions/status-buttons";
 
 export const metadata: Metadata = { title: "Item · readmyagent" };
 
@@ -29,7 +32,11 @@ export default async function ItemPage({ params }: Props) {
   await requireOwner();
   const { id } = await params;
   if (!z.uuid().safeParse(id).success) notFound();
-  const item = await getItemDetail(getDb(), id);
+  const db = getDb();
+  const [item, itemActions] = await Promise.all([
+    getItemDetail(db, id),
+    listActionsForItem(db, id),
+  ]);
   if (!item) notFound();
   const { timezone } = getConfig();
 
@@ -134,6 +141,33 @@ export default async function ItemPage({ params }: Props) {
             itemId={item.id}
             options={feedbackOptionsFor(item)}
           />
+        </div>
+      </section>
+
+      <section className="mt-6">
+        <h2 className="text-sm font-semibold">Actions</h2>
+        {itemActions.length === 0 ? (
+          <p className="mt-1 text-sm text-neutral-600">No actions yet.</p>
+        ) : (
+          <ul className="mt-1 space-y-3">
+            {itemActions.map((a) => (
+              <li key={a.id} className="text-sm">
+                <div className="flex flex-wrap items-center gap-2">
+                  <StatusBadge status={a.status} />
+                  <span className="font-medium break-words">{a.title}</span>
+                  {a.dueOn && (
+                    <span className="text-neutral-600">due {formatDueDate(a.dueOn)}</span>
+                  )}
+                </div>
+                <div className="mt-1">
+                  <ActionStatusButtons id={a.id} status={a.status} />
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="mt-3 rounded border border-neutral-200 p-3">
+          <ActionForm itemId={item.id} />
         </div>
       </section>
 

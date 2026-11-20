@@ -6,6 +6,7 @@ All notable changes to this project are documented here. Format: [Keep a Changel
 
 ### Added
 
+- Actions: follow-up tasks for the owner, created from an item or on their own, with an optional due date and notes. An actions list with open and closed tabs (open actions by due date), status changes (start, pause, done, drop, reopen), and the actions of an item on its page.
 - Next.js 16 application scaffold with TypeScript strict mode, Tailwind CSS, ESLint, Prettier and Vitest.
 - CI workflow `ci`: format, lint, typecheck, tests, dependency audit and build.
 - Contract tests that validate all examples in `schemas/examples` and `docs/agent-contract.md` against the JSON Schemas.
