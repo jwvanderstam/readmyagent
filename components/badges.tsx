@@ -28,6 +28,9 @@ const STATE_CLASS: Record<string, string> = {
   issues: "bg-amber-50 text-amber-900 ring-1 ring-amber-300",
   no_data: "bg-neutral-100 text-neutral-700 ring-1 ring-neutral-300",
   inactive: "bg-neutral-100 text-neutral-700 ring-1 ring-neutral-300",
+  todo: "bg-white text-neutral-900 ring-1 ring-neutral-400",
+  doing: "bg-sky-50 text-sky-900 ring-1 ring-sky-300",
+  dropped: "bg-neutral-100 text-neutral-700 ring-1 ring-neutral-300",
 };
 
 const base = "inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium whitespace-nowrap";
