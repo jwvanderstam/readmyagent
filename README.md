@@ -29,7 +29,7 @@ The button copies the repository and creates the Vercel project. The app then sh
 
 ## Status
 
-Phase 1 in progress: application scaffold and CI are in place, features follow. See [roadmap](docs/roadmap.md).
+Phase 1 is built and released as [v0.1.0](CHANGELOG.md). It is now in validation: the phase closes when its exit criteria hold in daily use. See [roadmap](docs/roadmap.md).
 
 ## Documentation
 

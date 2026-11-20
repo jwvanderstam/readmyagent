@@ -4,6 +4,10 @@ All notable changes to this project are documented here. Format: [Keep a Changel
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-20
+
+First release: the phase 1 agent loop. Instances update by merging release tags (operations, section 6).
+
 ### Added
 
 - Actions: follow-up tasks for the owner, created from an item or on their own, with an optional due date and notes. An actions list with open and closed tabs (open actions by due date), status changes (start, pause, done, drop, reopen), and the actions of an item on its page.
@@ -45,3 +49,6 @@ All notable changes to this project are documented here. Format: [Keep a Changel
 - Operations guide rewritten for owners of their own instance: Workload Identity Federation instead of a service account key, preview isolation, updating by release tag.
 - Security model extended with secret handling rules, preview isolation and supply chain threats.
 - Agents are managed in the app instead of `config/agents.ts`.
+
+[Unreleased]: https://github.com/jwvanderstam/readmyagent/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/jwvanderstam/readmyagent/releases/tag/v0.1.0
