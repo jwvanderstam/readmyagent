@@ -39,10 +39,11 @@ describe("feedbackOptionsFor", () => {
 });
 
 describe("canWithdraw", () => {
-  it("allows withdrawing only what the agent has not consumed", () => {
-    expect(["pending", "published", "consumed", "withdrawn"].filter(canWithdraw)).toEqual([
-      "pending",
-      "published",
-    ]);
+  it("allows withdrawing open feedback, and standing feedback also after consumption", () => {
+    const statuses = ["pending", "published", "consumed", "withdrawn"];
+    const allowed = (type: string) => statuses.filter((status) => canWithdraw({ status, type }));
+    expect(allowed("correct")).toEqual(["pending", "published"]);
+    expect(allowed("rule")).toEqual(["pending", "published", "consumed"]);
+    expect(allowed("keep_sender")).toEqual(["pending", "published", "consumed"]);
   });
 });

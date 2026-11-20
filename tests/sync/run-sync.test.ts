@@ -159,7 +159,7 @@ describe("runSync", () => {
     expect(closed?.status).toBe("failed");
   });
 
-  it("publishes pending feedback and removes consumed feedback from the file", async () => {
+  it("publishes pending feedback and keeps consumed standing feedback in the file", async () => {
     const fb = await createFeedback(db, { agentSlug: "test-agent", type: "rule", note: "x" }, NOW);
 
     const first = await sync();
@@ -169,7 +169,7 @@ describe("runSync", () => {
     drive.add("next.json", runDoc(19, { feedback_consumed: [fb.id] }), "2026-11-19T06:00:00Z");
     const second = await sync();
     expect(second).toMatchObject({ runsIngested: 1, feedbackPublished: true });
-    expect(drive.written.at(-1)).not.toContain(fb.id);
+    expect(drive.written.at(-1)).toContain(fb.id);
     const [row] = await db.select().from(feedback);
     expect(row?.status).toBe("consumed");
   });

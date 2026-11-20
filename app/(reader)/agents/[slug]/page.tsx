@@ -114,7 +114,7 @@ export default async function AgentPage({ params }: Props) {
                   <span className="text-neutral-600">
                     {formatDateTime(rule.createdAt, timezone)}
                   </span>
-                  {canWithdraw(rule.status) && <WithdrawButton feedbackId={rule.id} />}
+                  {canWithdraw(rule) && <WithdrawButton feedbackId={rule.id} />}
                 </div>
               </li>
             ))}

@@ -1,5 +1,5 @@
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
-import { type FeedbackFile, feedbackFileSchema } from "@/lib/contract";
+import { and, asc, eq, inArray, or, sql } from "drizzle-orm";
+import { type FeedbackFile, feedbackFileSchema, STANDING_FEEDBACK_TYPES } from "@/lib/contract";
 import type { Db, Feedback } from "@/lib/db";
 import { schema } from "@/lib/db";
 
@@ -45,8 +45,8 @@ export function buildFeedbackFile(
 export type PublishResult = { entries: number; newlyPublished: number };
 
 /**
- * Regenerate feedback.json with all pending and published feedback and mark pending rows as
- * published (architecture 6.2, step 3).
+ * Regenerate feedback.json with all open feedback and mark pending rows as published (architecture
+ * 6.2, step 3). Open means pending or published, plus consumed standing feedback (ADR-0010).
  *
  * Concurrency: a transaction-scoped advisory lock serializes publishes from this app. The file is
  * written inside the transaction, so a failed write leaves rows pending for the next attempt. If the
@@ -64,7 +64,12 @@ export async function publishFeedback(
     const open = await tx
       .select()
       .from(feedback)
-      .where(inArray(feedback.status, ["pending", "published"]))
+      .where(
+        or(
+          inArray(feedback.status, ["pending", "published"]),
+          and(eq(feedback.status, "consumed"), inArray(feedback.type, STANDING_FEEDBACK_TYPES)),
+        ),
+      )
       .orderBy(asc(feedback.createdAt), asc(feedback.id));
 
     const file = buildFeedbackFile(open, now);

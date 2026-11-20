@@ -145,9 +145,9 @@ Idempotency: the Drive file ID is the natural key. Re-running ingestion over the
 
 1. Owner marks an item, for example "not spam, keep this sender", or adds a rule for an agent.
 2. Feedback row is created with status `pending`. The owner can withdraw it until an agent consumes it.
-3. Right after the change, and on every sync while feedback is pending or was consumed, the publisher regenerates `feedback.json` with all `pending` and `published` feedback for all agents and updates the file in Drive. Rows become `published`. The file is written inside the database transaction: if the write fails, rows stay `pending` and the next publish retries. If the write succeeds and the commit fails, the next publish writes the same entries again, which is harmless because agents apply entries idempotently.
+3. Right after the change, and on every sync while feedback is pending or was consumed, the publisher regenerates `feedback.json` with all `pending` and `published` feedback for all agents, plus `consumed` standing feedback (ADR-0010), and updates the file in Drive. Rows become `published`. The file is written inside the database transaction: if the write fails, rows stay `pending` and the next publish retries. If the write succeeds and the commit fails, the next publish writes the same entries again, which is harmless because agents apply entries idempotently.
 4. On its next run, the agent reads `feedback.json`, applies entries addressed to it, and lists the applied IDs in `feedback_consumed` in its run JSON.
-5. Ingestion marks those rows `consumed` and links them to the run.
+5. Ingestion marks those rows `consumed` and links them to the run. One-off feedback leaves the next `feedback.json`; standing feedback stays until the owner withdraws it (ADR-0010).
 6. Feedback that stays `published` across two expected runs of its agent is flagged in the health view. This catches an agent that ignores feedback.
 
 ### 6.3 Missing run detection

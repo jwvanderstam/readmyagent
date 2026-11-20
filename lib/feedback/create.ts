@@ -1,7 +1,7 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, or } from "drizzle-orm";
 import { ulid } from "ulid";
 import { z } from "zod";
-import { FEEDBACK_TYPES } from "@/lib/contract";
+import { FEEDBACK_TYPES, STANDING_FEEDBACK_TYPES } from "@/lib/contract";
 import type { Db, Feedback } from "@/lib/db";
 import { schema } from "@/lib/db";
 
@@ -111,14 +111,23 @@ export async function createFeedback(
 }
 
 /**
- * Withdraw feedback the agent has not consumed yet. It disappears from feedback.json at the next
- * publish. Consumed feedback is history and cannot be withdrawn.
+ * Withdraw feedback. It disappears from feedback.json at the next publish. One-off feedback that an
+ * agent consumed is history and cannot be withdrawn; standing feedback can, which is how a rule ends
+ * (ADR-0010).
  */
 export async function withdrawFeedback(db: Db, id: string): Promise<void> {
   const updated = await db
     .update(feedback)
     .set({ status: "withdrawn" })
-    .where(and(eq(feedback.id, id), inArray(feedback.status, ["pending", "published"])))
+    .where(
+      and(
+        eq(feedback.id, id),
+        or(
+          inArray(feedback.status, ["pending", "published"]),
+          and(eq(feedback.status, "consumed"), inArray(feedback.type, STANDING_FEEDBACK_TYPES)),
+        ),
+      ),
+    )
     .returning({ id: feedback.id });
   if (updated.length > 0) return;
 
