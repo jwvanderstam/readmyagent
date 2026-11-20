@@ -1,0 +1,54 @@
+name: backup
+
+# Weekly encrypted database backup for an owner's instance (docs/operations.md section 7).
+# The job runs only when the repository variable BACKUP_AGE_RECIPIENT is set, so it never runs
+# upstream or in a fork whose owner did not configure it.
+
+on:
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    if: vars.BACKUP_AGE_RECIPIENT != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Install age
+        run: sudo apt-get update -q && sudo apt-get install -y -q age
+
+      - name: Dump and encrypt
+        env:
+          DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          RECIPIENT: ${{ vars.BACKUP_AGE_RECIPIENT }}
+          PG_VERSION: ${{ vars.BACKUP_PG_VERSION || '17' }}
+        # The dump is piped straight into age: the unencrypted data never touches the disk.
+        run: |
+          set -euo pipefail
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::Secret BACKUP_DATABASE_URL is not set."
+            exit 1
+          fi
+          umask 077
+          out="readmyagent-$(date -u +%F).dump.age"
+          docker run --rm -e DATABASE_URL "postgres:${PG_VERSION}-alpine" \
+            sh -c 'pg_dump --format=custom --no-owner --no-acl "$DATABASE_URL"' \
+            | age --encrypt --recipient "$RECIPIENT" --output "$out"
+          test -s "$out"
+          echo "BACKUP_FILE=$out" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: backup-${{ github.run_id }}
+          path: ${{ env.BACKUP_FILE }}
+          if-no-files-found: error
+          retention-days: 56
+          compression-level: 0

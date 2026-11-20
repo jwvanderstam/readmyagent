@@ -198,5 +198,35 @@ Do not configure your fork to deploy upstream `main` automatically: you would ru
 
 ## 7. Backup and restore
 
-- Weekly GitHub Action in your fork dumps the owner-owned tables to an artifact encrypted with a key only you hold (phase 1). Artifacts of a public repository can be downloaded by any GitHub user, so the dump is never stored unencrypted, and the job does not run in the upstream repository.
-- Restore: run migrations on an empty database, restore the dump, run a full re-sync from Drive to rebuild runs and items.
+The workflow `backup` in your fork dumps the whole database every Monday at 03:17 UTC, encrypts the dump with [age](https://age-encryption.org) for a key only you hold, and stores it as a workflow artifact for 56 days. Artifacts of a public repository can be downloaded by any GitHub user, so the dump is encrypted before it is written, and GitHub never holds the key that decrypts it. The workflow does nothing until you configure it, so it never runs upstream.
+
+The dump covers every table, not only the owner-owned ones: items reference runs, and feedback and actions reference items, so a partial dump cannot be restored without breaking those links. It also contains the migration history, so the restored database is at the right schema version.
+
+### 7.1 Set up
+
+1. On your own machine, install age and create a key pair:
+   ```bash
+   age-keygen -o readmyagent-backup.key
+   ```
+   It prints the public key (`age1...`). Keep `readmyagent-backup.key` in your password manager or another place outside GitHub and Vercel. Without it no backup can be read.
+2. In your fork, **Settings > Secrets and variables > Actions**:
+   - Variable `BACKUP_AGE_RECIPIENT`: the public key.
+   - Secret `BACKUP_DATABASE_URL`: the value of `DATABASE_URL_UNPOOLED` from Vercel.
+   - Variable `BACKUP_PG_VERSION` (optional): the major Postgres version of your Neon project, shown in the Neon console. Default `17`. `pg_dump` refuses to dump a newer server.
+3. Forks start with scheduled workflows disabled. Open **Actions**, enable workflows, and run **backup** once by hand.
+4. Download the artifact and check that you can decrypt it (7.2, step 1).
+
+### 7.2 Restore
+
+1. Download the newest `backup-*` artifact, unzip it, and decrypt:
+   ```bash
+   age --decrypt --identity readmyagent-backup.key --output backup.dump readmyagent-<date>.dump.age
+   ```
+2. Create an empty Neon database and restore into it with `pg_restore` of the same major version:
+   ```bash
+   pg_restore --no-owner --no-acl --dbname "<new-database-url>" backup.dump
+   ```
+3. Point `DATABASE_URL` and `DATABASE_URL_UNPOOLED` in Vercel at the new database and redeploy. The build applies any migration newer than the backup.
+4. Open the app. Sync on open ingests the runs written since the backup.
+
+Delete `backup.dump` when you are done: it is the unencrypted database.

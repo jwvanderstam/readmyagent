@@ -35,7 +35,7 @@ For the project:
 | T5 | Cron endpoint abused to trigger load | Bearer `CRON_SECRET` required; sync lock prevents concurrent runs |
 | T6 | Leaked secrets | No long-lived Google credential: Drive access through Workload Identity Federation (ADR-0008). Remaining secrets only in Vercel environment variables, marked Sensitive. Secret scanning with push protection and a secret scan in CI. Never in logs. See [secret handling](#secret-handling) |
 | T7 | Vulnerable dependencies or code | Dependabot, `pnpm audit` in CI, lockfile committed; CodeQL code scanning on every pull request and weekly |
-| T8 | Data loss of owner-owned state | Weekly backup of feedback, actions, item states and agents; runs and items can be rebuilt from Drive |
+| T8 | Data loss of owner-owned state | Weekly backup of the whole database, encrypted for a key only the owner holds; runs and items can also be rebuilt from Drive |
 | T9 | CSRF on mutations | Server Actions and Auth.js built-in CSRF protection; `SameSite=Lax` session cookies |
 | T10 | Preview deployments expose production data or credentials | Workload Identity Federation grants Drive access to the `production` environment only. Previews use their own database branch without production data and a test Drive folder. Vercel Deployment Protection stays on for previews |
 | T11 | Compromised upstream code reaches every instance (supply chain) | Protected `main` with required pull request and CI; GitHub Actions pinned to a commit SHA; workflows with least privilege and no secrets on pull requests from forks; tagged releases with changelog; instance owners merge releases themselves instead of auto-deploying upstream `main` |
