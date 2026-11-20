@@ -4,7 +4,7 @@ Every readmyagent deployment is an instance owned by one person, on that person'
 
 ## 1. One-time setup
 
-Order matters; each step produces a value a later step needs. A `gcloud` setup script and a "Deploy to Vercel" button that automate most of this are phase 1 deliverables; until then, follow the manual steps.
+Order matters; each step produces a value a later step needs. The "Deploy to Vercel" button in the README (1.2), `scripts/setup-gcloud.sh` (1.3) and `scripts/set-vercel-env.ps1` (1.5) automate most of it.
 
 ### 1.1 GitHub
 
@@ -16,7 +16,7 @@ Order matters; each step produces a value a later step needs. A `gcloud` setup s
 
 Vercel project:
 
-1. **Add New > Project**, import your fork. Keep the detected Next.js settings and deploy. The first deployment shows only the setup page: the app stays closed until its configuration is complete.
+1. **Add New > Project**, import your fork. Keep the detected Next.js settings and deploy. Or use the **Deploy to Vercel** button in the README: it copies the repository to your GitHub account and imports it in one go. Its copy is not a fork; add this repository as the `upstream` remote to update by release tag (section 6). The first deployment shows only the setup page: the app stays closed until its configuration is complete.
 2. Note the **team slug** (from the dashboard URL), the **project name** and the **production URL**. Google Cloud needs the first two in step 1.3, the OAuth client the third in step 1.4.
 3. **Settings > Build and Deployment > Node.js Version**: set **22.x**, the version in `package.json` `engines`. A different value is overridden by `engines` and shows an override warning.
 4. **Settings > Security > Secure Backend Access with OIDC Federation**: Issuer Mode **Team**.
@@ -40,7 +40,15 @@ Vercel Hobby is for personal, non-commercial use. An instance used for work need
 
 The app reads the agent folder and updates `feedback.json` as a service account, authenticated through Workload Identity Federation with Vercel's OIDC token (ADR-0008). No key file is created.
 
-Replace `<project-id>`, `<project-number>`, `<team>` and `<vercel-project>`:
+Run the setup script in your own terminal, signed in with `gcloud auth login`:
+
+```bash
+scripts/setup-gcloud.sh --project <project-id> --team <team> --vercel-project <vercel-project>
+```
+
+It enables the APIs, creates the service account, the pool and the provider, grants the production environment, and prints the `GCP_*` values for section 2. Running it again changes nothing that is already in place; it brings the provider in line with the given team and project.
+
+The same steps by hand. Replace `<project-id>`, `<project-number>`, `<team>` and `<vercel-project>`:
 
 ```bash
 gcloud config set project <project-id>
