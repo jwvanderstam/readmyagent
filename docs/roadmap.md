@@ -7,7 +7,9 @@ Phases are gated: a phase starts only when the exit criteria of the previous one
 - Architecture, ADRs, agent contract with JSON Schemas, data model, standards, security model.
 - Exit: documents reviewed and accepted by the owner.
 
-## Phase 1: Agent loop MVP (current)
+## Phase 1: Agent loop MVP (current: validation)
+
+Build complete and released as v0.1.0 on 2026-11-20. The phase closes when the exit criteria below hold; until then, only fixes found in daily use land on `main`.
 
 Scope:
 - Next.js scaffold, CI (lint, typecheck, test), Vercel and Neon wired, Auth.js with owner allowlist, security headers.
@@ -16,13 +18,15 @@ Scope:
 - Reader UI: inbox of open items, run timeline per agent, item detail, health view with missing and failed runs.
 - Feedback: create, publish to `feedback.json`, reconcile consumption.
 - Actions: create from item or standalone, simple status list.
-- Agent prompts updated for all three agents to write run JSON and consume feedback.
+- Agent prompts updated for all three agents to write run JSON and consume feedback. Owner task: the prompts live in the scheduled tasks, not in this repository (operations, section 5).
 - Weekly backup job.
 
-Exit criteria:
-- All three agents produce valid run JSON for 7 consecutive days.
-- At least 5 feedback entries consumed and visible with the consuming run.
-- A deliberately skipped run shows as `missing` within one day.
+Exit criteria, checked in the app:
+- [ ] All three agents produce valid run JSON for 7 consecutive days: no open entries on the ingest errors page, and every agent page shows no `missing` or `failed` run in that week.
+- [ ] At least 5 feedback entries consumed and visible with the consuming run.
+- [ ] A deliberately skipped run shows as `missing` within one day.
+
+When all three hold, mark them here, record the date, and phase 2's four weeks of daily use start from it.
 
 ## Phase 2: Daily use and refinement
 
