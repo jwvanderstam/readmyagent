@@ -125,4 +125,4 @@ Action: `todo -> doing -> done`, any state `-> dropped`.
 
 - Runs and items: kept indefinitely. Estimated volume: 3 agents, about 15 runs per week, under 50 MB per year including `raw`. Well inside the 1 GB Neon Free limit.
 - `sync_runs`: keep 90 days.
-- Backups: weekly `pg_dump` of owner-owned tables (`agents`, `items` state columns, `feedback`, `actions`) via a GitHub Action in the owner's fork, to an artifact encrypted with a key only the owner holds. Defined in phase 1. See [operations](operations.md#7-backup-and-restore).
+- Backups: weekly `pg_dump` of the whole database via the `backup` workflow in the owner's fork, encrypted with age for a key only the owner holds, kept as a workflow artifact for 56 days. Whole, because items reference runs and feedback and actions reference items. See [operations](operations.md#7-backup-and-restore).

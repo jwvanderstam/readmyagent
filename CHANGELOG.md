@@ -8,6 +8,7 @@ All notable changes to this project are documented here. Format: [Keep a Changel
 
 - Actions: follow-up tasks for the owner, created from an item or on their own, with an optional due date and notes. An actions list with open and closed tabs (open actions by due date), status changes (start, pause, done, drop, reopen), and the actions of an item on its page.
 - Ingest errors page: the header count of files that could not be read links to a list with file name, Drive file ID and the validation message, and a button to mark an error resolved. A file that is still invalid opens a new error on the next sync.
+- Weekly encrypted backup: the `backup` workflow dumps the whole database every Monday, encrypts it with age for the owner's public key, and keeps it as a workflow artifact for 56 days. It runs only in instances that set `BACKUP_AGE_RECIPIENT`. Setup and restore are in the operations guide, section 7.
 - Next.js 16 application scaffold with TypeScript strict mode, Tailwind CSS, ESLint, Prettier and Vitest.
 - CI workflow `ci`: format, lint, typecheck, tests, dependency audit and build.
 - Contract tests that validate all examples in `schemas/examples` and `docs/agent-contract.md` against the JSON Schemas.
