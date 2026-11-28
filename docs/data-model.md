@@ -123,6 +123,6 @@ Action: `todo -> doing -> done`, any state `-> dropped`.
 
 ## 4. Retention
 
-- Runs and items: kept indefinitely. Estimated volume: 3 agents, about 15 runs per week, under 50 MB per year including `raw`. Well inside the 1 GB Neon Free limit.
+- Runs and items: kept indefinitely, pending the Workspace AI Tools Addendum check in [ADR-0011](adr/0011-workspace-api-tiering-and-ai-tools-addendum.md). Estimated volume: 3 agents, about 15 runs per week, under 50 MB per year including `raw`. Well inside the 1 GB Neon Free limit.
 - `sync_runs`: keep 90 days.
 - Backups: weekly `pg_dump` of the whole database via the `backup` workflow in the owner's fork, encrypted with age for a key only the owner holds, kept as a workflow artifact for 56 days. Whole, because items reference runs and feedback and actions reference items. See [operations](operations.md#7-backup-and-restore).

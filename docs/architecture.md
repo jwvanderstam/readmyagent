@@ -204,6 +204,7 @@ See the [ADR log](adr/README.md).
 | R8 | Setup in Google Cloud is too hard for a new user | Medium | Medium | Setup script, setup page and step-by-step operations guide |
 | R10 | Auth.js v5 is still a beta release (5.0.0-beta.32, July 2026) | Medium | Medium | Exact version pinned; access rules live in our own tested `lib/auth/policy.ts` and the proxy decodes the session itself, so a replacement library only changes `lib/auth/auth.ts` |
 | R9 | Compromised upstream code reaches every instance | Low | High | Protected `main`, pinned CI actions, tagged releases, owners merge releases themselves. See SECURITY.md T11 |
+| R11 | Google classifies readmyagent as an AI access tool under the Workspace AI Tools Addendum: Drive REST access blocked from 2027-02-01, indefinite run retention not allowed | Low | Medium | ADR-0011: owner checks the Addendum and the usage dashboard before 2027-02-01; any in-app language model on Workspace data requires an ADR moving Drive access to MCP first |
 
 ## 11. Glossary
 
