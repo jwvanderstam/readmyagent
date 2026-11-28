@@ -28,13 +28,21 @@ function client(responses: (Response | Error)[]) {
   return { drive, calls: fake.calls };
 }
 
-const file = { id: "f1", name: "a.json", modifiedTime: new Date(), size: 10 };
+const file = { id: "f1", name: "a.json", modifiedTime: new Date(), createdTime: null, size: 10 };
 
 describe("Drive client", () => {
   it("lists the folder with an escaped query, follows pages and sends credentials", async () => {
     const { drive, calls } = client([
       json({
-        files: [{ id: "a", name: "a.json", modifiedTime: "2026-11-18T06:00:00Z", size: "12" }],
+        files: [
+          {
+            id: "a",
+            name: "a.json",
+            modifiedTime: "2026-11-18T06:00:00Z",
+            createdTime: "2026-11-18T05:59:00Z",
+            size: "12",
+          },
+        ],
         nextPageToken: "p2",
       }),
       json({ files: [{ id: "b", name: "b.md", modifiedTime: "2026-11-18T06:01:00Z" }] }),
@@ -43,13 +51,26 @@ describe("Drive client", () => {
     const files = await drive.listFiles(new Date("2026-11-17T00:00:00Z"));
 
     expect(files).toEqual([
-      { id: "a", name: "a.json", modifiedTime: new Date("2026-11-18T06:00:00Z"), size: 12 },
-      { id: "b", name: "b.md", modifiedTime: new Date("2026-11-18T06:01:00Z"), size: null },
+      {
+        id: "a",
+        name: "a.json",
+        modifiedTime: new Date("2026-11-18T06:00:00Z"),
+        createdTime: new Date("2026-11-18T05:59:00Z"),
+        size: 12,
+      },
+      {
+        id: "b",
+        name: "b.md",
+        modifiedTime: new Date("2026-11-18T06:01:00Z"),
+        createdTime: null,
+        size: null,
+      },
     ]);
     const q = calls[0]!.url.searchParams.get("q");
     expect(q).toBe(
       "'folder\\'1' in parents and trashed = false and modifiedTime > '2026-11-17T00:00:00.000Z'",
     );
+    expect(calls[0]!.url.searchParams.get("fields")).toContain("createdTime");
     expect(calls[1]!.url.searchParams.get("pageToken")).toBe("p2");
     expect(new Headers(calls[0]!.init.headers).get("authorization")).toBe("Bearer test-token");
   });

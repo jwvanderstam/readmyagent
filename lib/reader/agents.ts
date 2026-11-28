@@ -39,6 +39,8 @@ export async function getAgentDetail(db: Db, slug: string, opts: Opts & { runLim
         startedAt: runs.startedAt,
         status: runs.status,
         summary: runs.summary,
+        source: runs.source,
+        parseStatus: runs.parseStatus,
         itemCount: count(itemOccurrences.itemId),
       })
       .from(runs)

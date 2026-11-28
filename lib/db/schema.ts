@@ -40,6 +40,9 @@ export const feedbackStatus = pgEnum("feedback_status", [
 export const actionStatus = pgEnum("action_status", ["todo", "doing", "done", "dropped"]);
 export const syncTrigger = pgEnum("sync_trigger", ["cron", "manual", "on_open"]);
 export const syncStatus = pgEnum("sync_status", ["running", "ok", "partial", "failed"]);
+// ADR-0011: a run comes from a JSON run file, or from a Markdown log when there is no JSON.
+export const runSource = pgEnum("run_source", ["json", "markdown"]);
+export const parseStatus = pgEnum("parse_status", ["ok", "partial"]);
 
 export const agents = pgTable("agents", {
   slug: text("slug").primaryKey(),
@@ -69,6 +72,11 @@ export const runs = pgTable(
     verification: jsonb("verification").notNull(),
     raw: jsonb("raw").notNull(),
     ingestedAt: tstz("ingested_at").notNull().defaultNow(),
+    source: runSource("source").notNull().default("json"),
+    /** The full Markdown log, for runs ingested from Markdown. */
+    markdown: text("markdown"),
+    /** How well the Markdown could be read; null for JSON runs. */
+    parseStatus: parseStatus("parse_status"),
   },
   (t) => [
     unique("runs_agent_run_id_unique").on(t.agentSlug, t.runId),

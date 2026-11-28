@@ -56,3 +56,21 @@ describe("docs/agent-contract.md examples", () => {
     expectValid("entries" in data ? "feedback" : "run", data);
   });
 });
+
+describe("docs/contracts/agent-instructions.md", () => {
+  const markdown = readFileSync(join(root, "docs", "contracts", "agent-instructions.md"), "utf8");
+  const blocks = [...markdown.matchAll(/```json\r?\n([\s\S]*?)```/g)].map(
+    (m) => JSON.parse(m[1] ?? "") as Record<string, unknown>,
+  );
+
+  it("has one valid example per agent", () => {
+    expect(blocks.map((b) => b.agent)).toEqual(["mail-triage", "localchat-wachter", "weekbrief"]);
+    for (const block of blocks) expectValid("run", block);
+  });
+
+  it("embeds the current run schema inside the paste block", () => {
+    const paste = /<!-- PASTE START -->([\s\S]*?)<!-- PASTE END -->/.exec(markdown)?.[1] ?? "";
+    const embedded = /```json-schema\r?\n([\s\S]*?)```/.exec(paste)?.[1] ?? "";
+    expect(JSON.parse(embedded)).toEqual(readJson(join(schemasDir, "agent-run.schema.json")));
+  });
+});

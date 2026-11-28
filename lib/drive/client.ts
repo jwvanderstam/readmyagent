@@ -12,6 +12,8 @@ export type DriveFile = {
   id: string;
   name: string;
   modifiedTime: Date;
+  /** When the file was created; for a Markdown log, the end of its run (ADR-0011). */
+  createdTime: Date | null;
   size: number | null;
 };
 
@@ -47,7 +49,7 @@ export type DriveClientOptions = {
 const quote = (value: string) => `'${value.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`;
 
 type FilesPage = {
-  files?: { id: string; name: string; modifiedTime: string; size?: string }[];
+  files?: { id: string; name: string; modifiedTime: string; createdTime?: string; size?: string }[];
   nextPageToken?: string;
 };
 
@@ -94,7 +96,7 @@ export function createDriveClient(options: DriveClientOptions): RunFileSource & 
       do {
         const params = new URLSearchParams({
           q: conditions.join(" and "),
-          fields: "nextPageToken, files(id, name, modifiedTime, size)",
+          fields: "nextPageToken, files(id, name, modifiedTime, createdTime, size)",
           pageSize: "1000",
           orderBy: "modifiedTime",
         });
@@ -106,6 +108,7 @@ export function createDriveClient(options: DriveClientOptions): RunFileSource & 
             id: f.id,
             name: f.name,
             modifiedTime: new Date(f.modifiedTime),
+            createdTime: f.createdTime === undefined ? null : new Date(f.createdTime),
             size: f.size === undefined ? null : Number(f.size),
           });
         }

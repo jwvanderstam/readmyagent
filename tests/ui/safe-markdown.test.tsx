@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { SafeMarkdown } from "@/components/safe-markdown";
@@ -33,5 +35,16 @@ describe("SafeMarkdown", () => {
     );
     expect(html).not.toMatch(/javascript:|data:text/);
     expect(html).toContain("<span>bad</span>");
+  });
+
+  it("renders a full Markdown run log with tables and without raw HTML", () => {
+    const log = readFileSync(
+      join(import.meta.dirname, "..", "fixtures", "markdown", "weekbrief-run-2026-w48.md"),
+      "utf8",
+    );
+    const html = render(log);
+    expect(html).toContain("<h1>Weekbrief 2026-w48");
+    expect(html).toContain("<table>");
+    expect(html).not.toContain("<script");
   });
 });

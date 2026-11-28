@@ -57,6 +57,53 @@ export const runItemSchema = z.looseObject({
   suggested_action: z.string().max(500).optional(),
 });
 
+const sources = z.array(z.string().min(1).max(512)).max(20);
+
+/** Contract 1.2: the knowledge section of a briefing such as the weekbrief. */
+export const knowledgeSchema = z.looseObject({
+  trends: z
+    .array(
+      z.looseObject({
+        title: z.string().min(1).max(200),
+        summary: z.string().min(1).max(2000),
+        sources,
+        relevance_for_owner: z.string().min(1).max(1000),
+      }),
+    )
+    .max(20)
+    .optional(),
+  signals: z
+    .array(
+      z.looseObject({
+        title: z.string().min(1).max(200),
+        summary: z.string().max(1000).optional(),
+        sources: sources.optional(),
+      }),
+    )
+    .max(50)
+    .optional(),
+  actions: z
+    .array(
+      z.looseObject({
+        title: z.string().min(1).max(200),
+        detail: z.string().max(1000).optional(),
+        due_on: z.iso.date().optional(),
+      }),
+    )
+    .max(20)
+    .optional(),
+  improvement_proposals: z
+    .array(
+      z.looseObject({
+        title: z.string().min(1).max(200),
+        detail: z.string().max(1000).optional(),
+        target_agent: slug.optional(),
+      }),
+    )
+    .max(20)
+    .optional(),
+});
+
 export const runFileSchema = z.looseObject({
   contract_version: contractVersion,
   agent: slug,
@@ -77,6 +124,7 @@ export const runFileSchema = z.looseObject({
   // Contract 1.1: the agent describes itself, so the reader can register and update it (ADR-0009).
   agent_name: z.string().min(1).max(100).optional(),
   schedule: z.string().min(1).max(200).optional(),
+  knowledge: knowledgeSchema.optional(),
 });
 
 export const feedbackEntrySchema = z.strictObject({
