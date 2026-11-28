@@ -133,7 +133,7 @@ Triggers: opening the app when the last sync is older than 5 minutes, the manual
 1. Acquire a sync lock (row in `sync_runs` with status `running`, enforced by a partial unique index). A lock older than 10 minutes is closed as `failed` first.
 2. List files in the Drive folder with `modifiedTime` after the last successful sync minus a 1-day overlap. A manual sync lists the whole folder, which also backfills older files.
 3. For each `*.json` run file (not `feedback.json`) not yet in `runs` by Drive file ID: download, validate against the contract version it declares. The Markdown log named in `log_file` is linked by its Drive ID when it is in the same listing. A failed download becomes an ingest error and the sync continues; the error is resolved automatically when the file is ingested later.
-   - Markdown fallback ([ADR-0011](adr/0011-markdown-fallback-ingest.md)): after the JSON files, each Markdown log whose name matches a known run pattern and that is not yet a run or a linked log becomes a run with `source = 'markdown'`. Agent and time come from the file name (Europe/Amsterdam) and `createdTime`; the body is stored and a few fields are extracted. What cannot be read gives `parse_status = 'partial'`, never a dropped run. A JSON run for the same log wins: it replaces the Markdown run and keeps the link.
+   - Markdown fallback ([ADR-0012](adr/0012-markdown-fallback-ingest.md)): after the JSON files, each Markdown log whose name matches a known run pattern and that is not yet a run or a linked log becomes a run with `source = 'markdown'`. Agent and time come from the file name (Europe/Amsterdam) and `createdTime`; the body is stored and a few fields are extracted. What cannot be read gives `parse_status = 'partial'`, never a dropped run. A JSON run for the same log wins: it replaces the Markdown run and keeps the link.
 4. Valid: upsert run and items in one transaction. Items are deduplicated by `(agent, fingerprint)`; a repeated finding links to the existing item instead of creating a new one.
 5. Invalid: store an `ingest_errors` row with the file ID and validation message. Never drop silently.
 6. Reconcile feedback: for each ingested run, mark listed feedback IDs as `consumed`.
@@ -195,7 +195,7 @@ See the [ADR log](adr/README.md).
 
 | ID | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|---|
-| R1 | Agents do not reliably produce valid JSON | High (happened: no JSON until 2026-11-28) | High | Strict schema with versioning; ingest errors visible in UI; pasteable agent instructions with schema and self-check (docs/contracts/agent-instructions.md); Markdown fallback ingest keeps runs visible (ADR-0011) |
+| R1 | Agents do not reliably produce valid JSON | High (happened: no JSON until 2026-11-28) | High | Strict schema with versioning; ingest errors visible in UI; pasteable agent instructions with schema and self-check (docs/contracts/agent-instructions.md); Markdown fallback ingest keeps runs visible (ADR-0012) |
 | R2 | Service account approach breaks because Google changes Drive quota rules again | Low | Medium | Only update operations on an owner-created file; fallback is OAuth as the owner with a stored refresh token |
 | R3 | `feedback.json` becomes an injection channel into agents | Low | High | Only the authenticated owner creates feedback; schema restricts types; agents instructed to treat entries as data within a fixed set of actions |
 | R4 | Vercel Hobby cron fires once per day, late within the hour | High | Low | On-open sync and manual sync; health uses a grace window |

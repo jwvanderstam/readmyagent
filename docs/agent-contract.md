@@ -73,7 +73,7 @@ Schema: [`schemas/agent-run.schema.json`](../schemas/agent-run.schema.json)
 | `items` | yes | Findings that may need attention. Empty array when there are none. Max 200. |
 | `verification` | yes | Result of the agent's own verification loop. |
 | `feedback_consumed` | yes | IDs from `feedback.json` that this run applied. Empty array when none. |
-| `log_file` | no | File name of the Markdown log written in the same run. Strongly recommended: it links the log, and it makes this JSON replace a Markdown run already ingested from that log (ADR-0011). |
+| `log_file` | no | File name of the Markdown log written in the same run. Strongly recommended: it links the log, and it makes this JSON replace a Markdown run already ingested from that log (ADR-0012). |
 | `knowledge` | no (1.2) | Knowledge section of a briefing: `trends` (each with required `title`, `summary`, `sources`, `relevance_for_owner`), `signals`, `actions`, `improvement_proposals`. Field table in [contracts/agent-instructions.md](contracts/agent-instructions.md). Stored with the run. |
 
 ### 2.3 Items
@@ -156,7 +156,7 @@ Every type except `rule` refers to an item and carries its fingerprint in `targe
 - A fingerprint that appears twice in one run counts as one item; the last occurrence wins.
 - A finding seen again links to the existing item. Its content follows the most recent run by `started_at`, also when files arrive out of order. An item marked `done` reopens when it reappears; `acknowledged` and `dismissed` stay.
 - `feedback_consumed` marks feedback consumed only when it was published and addressed to the same agent. Other IDs are ignored.
-- Markdown fallback (ADR-0011): a Markdown log named `mail-triage-run-<YYYY-MM-DD>-<HHMM>.md`, `localchat-wachter-run-<YYYY-MM-DD>.md` or `weekbrief-run-<YYYY>-w<WW>.md` becomes a run when no JSON run names it in `log_file`. It has no items and consumes no feedback. A JSON run that names it later replaces it.
+- Markdown fallback (ADR-0012): a Markdown log named `mail-triage-run-<YYYY-MM-DD>-<HHMM>.md`, `localchat-wachter-run-<YYYY-MM-DD>.md` or `weekbrief-run-<YYYY>-w<WW>.md` becomes a run when no JSON run names it in `log_file`. It has no items and consumes no feedback. A JSON run that names it later replaces it.
 
 ## 5. Versioning
 

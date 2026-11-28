@@ -29,7 +29,7 @@ export default async function RunPage({ params }: Props) {
   };
   const metrics = Object.entries(run.metrics ?? {}).filter(([, v]) => typeof v === "number");
   const fromMarkdown = run.source === "markdown";
-  // Set by the Markdown ingest (ADR-0011): extracted text fields and what could not be read.
+  // Set by the Markdown ingest (ADR-0012): extracted text fields and what could not be read.
   const raw = run.raw as { fields?: unknown; parse_notes?: unknown };
   const fields = Object.entries(
     fromMarkdown && typeof raw.fields === "object" && raw.fields !== null ? raw.fields : {},

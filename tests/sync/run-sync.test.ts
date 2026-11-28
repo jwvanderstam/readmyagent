@@ -211,7 +211,7 @@ describe("syncIfStale", () => {
   });
 });
 
-describe("runSync with Markdown run files (ADR-0011)", () => {
+describe("runSync with Markdown run files (ADR-0012)", () => {
   const md = (name: string) =>
     readFileSync(join(import.meta.dirname, "..", "fixtures", "markdown", name), "utf8");
 

@@ -40,7 +40,7 @@ export const feedbackStatus = pgEnum("feedback_status", [
 export const actionStatus = pgEnum("action_status", ["todo", "doing", "done", "dropped"]);
 export const syncTrigger = pgEnum("sync_trigger", ["cron", "manual", "on_open"]);
 export const syncStatus = pgEnum("sync_status", ["running", "ok", "partial", "failed"]);
-// ADR-0011: a run comes from a JSON run file, or from a Markdown log when there is no JSON.
+// ADR-0012: a run comes from a JSON run file, or from a Markdown log when there is no JSON.
 export const runSource = pgEnum("run_source", ["json", "markdown"]);
 export const parseStatus = pgEnum("parse_status", ["ok", "partial"]);
 

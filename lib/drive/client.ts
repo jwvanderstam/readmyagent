@@ -12,7 +12,7 @@ export type DriveFile = {
   id: string;
   name: string;
   modifiedTime: Date;
-  /** When the file was created; for a Markdown log, the end of its run (ADR-0011). */
+  /** When the file was created; for a Markdown log, the end of its run (ADR-0012). */
   createdTime: Date | null;
   size: number | null;
 };

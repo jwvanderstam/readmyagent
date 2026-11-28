@@ -43,7 +43,7 @@ Drivers: production uses the Neon serverless driver over WebSockets (`lib/db/cli
 | `verification` | jsonb | |
 | `raw` | jsonb | Full original document, for re-processing. Markdown runs: file name, extracted fields, parse notes |
 | `ingested_at` | timestamptz | |
-| `source` | enum `json`, `markdown` | Where the run came from (ADR-0011) |
+| `source` | enum `json`, `markdown` | Where the run came from (ADR-0012) |
 | `markdown` | text null | Full Markdown log of a Markdown run |
 | `parse_status` | enum `ok`, `partial` null | How well a Markdown run could be read; null for JSON runs |
 

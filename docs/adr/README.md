@@ -15,4 +15,4 @@ Format: [Michael Nygard](https://cognitect.com/blog/2011/11/15/documenting-archi
 | [0009](0009-agents-register-from-run-files.md) | Agents register and update themselves from their run files | Accepted |
 | [0010](0010-standing-feedback-stays-published.md) | Standing feedback stays in feedback.json until withdrawn | Accepted |
 | [0011](0011-workspace-api-tiering-and-ai-tools-addendum.md) | Position under the Workspace API tiering model and AI Tools Addendum | Accepted |
-| [0011](0011-markdown-fallback-ingest.md) | Markdown fallback ingest for agents without a JSON run file | Accepted |
+| [0012](0012-markdown-fallback-ingest.md) | Markdown fallback ingest for agents without a JSON run file | Accepted |

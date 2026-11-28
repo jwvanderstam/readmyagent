@@ -1,6 +1,6 @@
 # ADR-0004: Structured JSON run file next to the Markdown log
 
-- Status: Accepted, amended by [ADR-0011](0011-markdown-fallback-ingest.md)
+- Status: Accepted, amended by [ADR-0012](0012-markdown-fallback-ingest.md)
 - Date: 2026-11-17
 
 ## Context
@@ -26,4 +26,4 @@ Option 3. The JSON file is the contract, defined in `/schemas` and explained in 
 
 ## Note, 2026-11-28
 
-The agents never wrote JSON run files, so nothing was ingested. [ADR-0011](0011-markdown-fallback-ingest.md) adds a permanent Markdown fallback: Markdown logs become runs when no JSON exists, and JSON wins when it does. JSON stays the contract for items, metrics and feedback consumption. Contract 1.2 adds the optional `knowledge` section for the weekbrief; the pasteable agent instructions are in [docs/contracts/agent-instructions.md](../contracts/agent-instructions.md).
+The agents never wrote JSON run files, so nothing was ingested. [ADR-0012](0012-markdown-fallback-ingest.md) adds a permanent Markdown fallback: Markdown logs become runs when no JSON exists, and JSON wins when it does. JSON stays the contract for items, metrics and feedback consumption. Contract 1.2 adds the optional `knowledge` section for the weekbrief; the pasteable agent instructions are in [docs/contracts/agent-instructions.md](../contracts/agent-instructions.md).

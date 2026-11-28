@@ -22,7 +22,7 @@ export type MarkdownIngestOutcome =
   | { status: "ignored" };
 
 /**
- * Ingest one Markdown log as a run when its agent wrote no JSON run file (ADR-0011). Idempotent on
+ * Ingest one Markdown log as a run when its agent wrote no JSON run file (ADR-0012). Idempotent on
  * the Drive file ID. Extraction problems never drop the run: it is stored with
  * `parse_status = 'partial'`. Markdown runs carry no items and consume no feedback.
  */

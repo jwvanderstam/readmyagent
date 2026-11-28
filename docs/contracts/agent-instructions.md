@@ -1,6 +1,6 @@
 # Agent instructions for readmyagent
 
-Contract version 1.2. Paste everything between the two `PASTE` markers verbatim into the prompt of a scheduled agent (mail-triage, localchat-wachter, weekbrief, or a new one). The normative schema is [`schemas/agent-run.schema.json`](../../schemas/agent-run.schema.json); its exact content is repeated inside the block so the agent needs nothing else. The background is in [agent-contract.md](../agent-contract.md), [ADR-0004](../adr/0004-json-run-contract.md) and [ADR-0011](../adr/0011-markdown-fallback-ingest.md).
+Contract version 1.2. Paste everything between the two `PASTE` markers verbatim into the prompt of a scheduled agent (mail-triage, localchat-wachter, weekbrief, or a new one). The normative schema is [`schemas/agent-run.schema.json`](../../schemas/agent-run.schema.json); its exact content is repeated inside the block so the agent needs nothing else. The background is in [agent-contract.md](../agent-contract.md), [ADR-0004](../adr/0004-json-run-contract.md) and [ADR-0012](../adr/0012-markdown-fallback-ingest.md).
 
 Tests keep this file honest: every `json` example below validates against the schema, and the embedded schema must equal the file in `/schemas`.
 

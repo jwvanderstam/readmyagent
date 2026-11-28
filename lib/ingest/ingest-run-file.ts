@@ -88,7 +88,7 @@ export async function ingestRunFile(
       } as const;
     }
 
-    // JSON wins over a Markdown run ingested earlier from this run's log (ADR-0011). The log stays
+    // JSON wins over a Markdown run ingested earlier from this run's log (ADR-0012). The log stays
     // linked. Markdown runs have no items or feedback, so nothing else refers to them.
     if (run.log_file) {
       const replaced = await tx

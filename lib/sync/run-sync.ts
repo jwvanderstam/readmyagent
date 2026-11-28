@@ -35,13 +35,13 @@ export type SyncResult =
     };
 
 const isRunFile = (f: DriveFile) => f.name.endsWith(".json") && f.name !== FEEDBACK_FILE_NAME;
-/** Markdown logs named like a run of a known agent (ADR-0011). Other `.md` files are ignored. */
+/** Markdown logs named like a run of a known agent (ADR-0012). Other `.md` files are ignored. */
 const isMarkdownRunFile = (f: DriveFile) => parseRunFileName(f.name) !== null;
 
 /**
  * One sync (architecture 6.1): take the lock, list new files, ingest them one by one, publish
  * feedback when it changed, release the lock with counts. A failing file never stops the others.
- * JSON run files go first, so a Markdown log of the same run is only linked (ADR-0011). A manual
+ * JSON run files go first, so a Markdown log of the same run is only linked (ADR-0012). A manual
  * sync lists the whole folder, so files outside the incremental window (a backfill) are found.
  */
 export async function runSync(

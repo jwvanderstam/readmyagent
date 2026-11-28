@@ -1,4 +1,4 @@
-# ADR-0011: Markdown fallback ingest for agents without a JSON run file
+# ADR-0012: Markdown fallback ingest for agents without a JSON run file
 
 - Status: Accepted
 - Date: 2026-11-28

@@ -1,4 +1,4 @@
-// Markdown fallback ingest (ADR-0011). Pure: no I/O, never throws.
+// Markdown fallback ingest (ADR-0012). Pure: no I/O, never throws.
 //
 // Agents that do not yet write a JSON run file still write a Markdown log. This module recognizes
 // those logs by file name, derives agent and run time from the name, and extracts a few fields
