@@ -88,6 +88,28 @@ export async function ingestRunFile(
       } as const;
     }
 
+    // JSON wins over a Markdown run ingested earlier from this run's log (ADR-0012). The log stays
+    // linked. Markdown runs have no items or feedback, so nothing else refers to them.
+    if (run.log_file) {
+      const replaced = await tx
+        .delete(runs)
+        .where(
+          and(
+            eq(runs.agentSlug, run.agent),
+            eq(runs.source, "markdown"),
+            sql`${runs.raw}->>'file_name' = ${run.log_file}`,
+          ),
+        )
+        .returning({ driveFileId: runs.driveFileId });
+      const logFileId = replaced[0]?.driveFileId;
+      if (logFileId) {
+        await tx
+          .update(runs)
+          .set({ logFileId })
+          .where(and(eq(runs.id, inserted.id), isNull(runs.logFileId)));
+      }
+    }
+
     await applyDeclaredAgentFields(tx, run, now());
     const itemCount = await upsertItems(tx, run, inserted.id, now());
     const feedbackConsumed = await reconcileConsumedFeedback(

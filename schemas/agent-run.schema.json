@@ -50,9 +50,83 @@
     },
     "log_file": { "type": "string", "maxLength": 256 },
     "agent_name": { "type": "string", "minLength": 1, "maxLength": 100 },
-    "schedule": { "type": "string", "minLength": 1, "maxLength": 200 }
+    "schedule": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "knowledge": { "$ref": "#/$defs/knowledge" }
   },
   "$defs": {
+    "sources": {
+      "type": "array",
+      "maxItems": 20,
+      "items": { "type": "string", "minLength": 1, "maxLength": 512 }
+    },
+    "knowledge": {
+      "description": "Contract 1.2: the knowledge section of a briefing (trends, loose signals, actions, improvement proposals).",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "trends": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": ["title", "summary", "sources", "relevance_for_owner"],
+            "properties": {
+              "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+              "summary": { "type": "string", "minLength": 1, "maxLength": 2000 },
+              "sources": { "$ref": "#/$defs/sources" },
+              "relevance_for_owner": { "type": "string", "minLength": 1, "maxLength": 1000 }
+            }
+          }
+        },
+        "signals": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": ["title"],
+            "properties": {
+              "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+              "summary": { "type": "string", "maxLength": 1000 },
+              "sources": { "$ref": "#/$defs/sources" }
+            }
+          }
+        },
+        "actions": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": ["title"],
+            "properties": {
+              "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+              "detail": { "type": "string", "maxLength": 1000 },
+              "due_on": { "type": "string", "format": "date" }
+            }
+          }
+        },
+        "improvement_proposals": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": ["title"],
+            "properties": {
+              "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+              "detail": { "type": "string", "maxLength": 1000 },
+              "target_agent": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+                "maxLength": 64
+              }
+            }
+          }
+        }
+      }
+    },
     "item": {
       "type": "object",
       "additionalProperties": true,

@@ -1,9 +1,14 @@
-import { and, count, desc, eq, inArray, lt } from "drizzle-orm";
+import { and, count, desc, eq, inArray, lt, or } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { schema } from "@/lib/db";
 import type { DriveFile, RunFileSource } from "@/lib/drive";
 import { type FeedbackFileWriter, publishFeedback } from "@/lib/feedback";
-import { ingestRunFile, recordIngestError } from "@/lib/ingest";
+import {
+  ingestMarkdownRunFile,
+  ingestRunFile,
+  parseRunFileName,
+  recordIngestError,
+} from "@/lib/ingest";
 import { log } from "@/lib/log";
 
 const { runs, feedback, syncRuns } = schema;
@@ -30,10 +35,14 @@ export type SyncResult =
     };
 
 const isRunFile = (f: DriveFile) => f.name.endsWith(".json") && f.name !== FEEDBACK_FILE_NAME;
+/** Markdown logs named like a run of a known agent (ADR-0012). Other `.md` files are ignored. */
+const isMarkdownRunFile = (f: DriveFile) => parseRunFileName(f.name) !== null;
 
 /**
  * One sync (architecture 6.1): take the lock, list new files, ingest them one by one, publish
  * feedback when it changed, release the lock with counts. A failing file never stops the others.
+ * JSON run files go first, so a Markdown log of the same run is only linked (ADR-0012). A manual
+ * sync lists the whole folder, so files outside the incremental window (a backfill) are found.
  */
 export async function runSync(
   db: Db,
@@ -76,35 +85,36 @@ export async function runSync(
       .where(inArray(syncRuns.status, ["ok", "partial"]))
       .orderBy(desc(syncRuns.startedAt))
       .limit(1);
-    const since = last ? new Date(last.startedAt.getTime() - SYNC_OVERLAP_MS) : null;
+    const since =
+      last && opts.trigger !== "manual"
+        ? new Date(last.startedAt.getTime() - SYNC_OVERLAP_MS)
+        : null;
 
     const listed = await deps.source.listFiles(since);
     const logFiles = new Map(
       listed.filter((f) => f.name.endsWith(".md")).map((f) => [f.name, f.id]),
     );
     const runFiles = listed.filter(isRunFile);
-    filesSeen = runFiles.length;
+    const markdownFiles = listed.filter(isMarkdownRunFile);
+    filesSeen = runFiles.length + markdownFiles.length;
 
-    const known = runFiles.length
-      ? new Set(
-          (
-            await db
-              .select({ id: runs.driveFileId })
-              .from(runs)
-              .where(
-                inArray(
-                  runs.driveFileId,
-                  runFiles.map((f) => f.id),
-                ),
-              )
-          ).map((r) => r.id),
-        )
-      : new Set<string>();
+    // A Markdown file is known when it is a run itself or the linked log of a JSON run.
+    const ids = [...runFiles, ...markdownFiles].map((f) => f.id);
+    const known = new Set<string>();
+    if (ids.length) {
+      const rows = await db
+        .select({ id: runs.driveFileId, logFileId: runs.logFileId })
+        .from(runs)
+        .where(or(inArray(runs.driveFileId, ids), inArray(runs.logFileId, ids)));
+      for (const r of rows) {
+        known.add(r.id);
+        if (r.logFileId) known.add(r.logFileId);
+      }
+    }
 
-    for (const file of runFiles.filter((f) => !known.has(f.id))) {
-      let content: string;
+    const download = async (file: DriveFile): Promise<string | null> => {
       try {
-        content = await deps.source.download(file);
+        return await deps.source.download(file);
       } catch (e) {
         errors += 1;
         await recordIngestError(
@@ -114,8 +124,13 @@ export async function runSync(
           `Download failed: ${(e as Error).message}`,
           now(),
         );
-        continue;
+        return null;
       }
+    };
+
+    for (const file of runFiles.filter((f) => !known.has(f.id))) {
+      const content = await download(file);
+      if (content === null) continue;
       const outcome = await ingestRunFile(
         db,
         { driveFileId: file.id, fileName: file.name, content },
@@ -127,6 +142,22 @@ export async function runSync(
       } else if (outcome.status === "invalid") {
         errors += 1;
         log("warn", "ingest.file_invalid", "Run file not ingested", { driveFileId: file.id });
+      }
+    }
+
+    for (const file of markdownFiles.filter((f) => !known.has(f.id))) {
+      const content = await download(file);
+      if (content === null) continue;
+      const outcome = await ingestMarkdownRunFile(
+        db,
+        { driveFileId: file.id, fileName: file.name, createdTime: file.createdTime, content },
+        { syncRunId, now },
+      );
+      if (outcome.status === "ingested") {
+        runsIngested += 1;
+      } else if (outcome.status === "invalid") {
+        errors += 1;
+        log("warn", "ingest.file_invalid", "Markdown run not ingested", { driveFileId: file.id });
       }
     }
 

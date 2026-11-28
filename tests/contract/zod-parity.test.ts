@@ -46,6 +46,41 @@ const runCases: [string, Json][] = [
   ["empty declared name", { ...baseRun, agent_name: "" }],
   ["declared schedule over 200 chars", { ...baseRun, schedule: "x".repeat(201) }],
   ["declared schedule that is a number", { ...baseRun, schedule: 7 }],
+  [
+    "knowledge with every section",
+    {
+      ...baseRun,
+      knowledge: {
+        trends: [
+          { title: "T", summary: "S", sources: ["https://example.org"], relevance_for_owner: "R" },
+        ],
+        signals: [{ title: "Sig" }],
+        actions: [{ title: "Act", due_on: "2026-12-04" }],
+        improvement_proposals: [{ title: "Imp", target_agent: "mail-triage" }],
+      },
+    },
+  ],
+  ["empty knowledge", { ...baseRun, knowledge: {} }],
+  [
+    "trend without relevance_for_owner",
+    { ...baseRun, knowledge: { trends: [{ title: "T", summary: "S", sources: [] }] } },
+  ],
+  [
+    "trend with sources as a string",
+    {
+      ...baseRun,
+      knowledge: { trends: [{ title: "T", summary: "S", sources: "x", relevance_for_owner: "R" }] },
+    },
+  ],
+  [
+    "action with a bad due date",
+    { ...baseRun, knowledge: { actions: [{ title: "A", due_on: "4 dec" }] } },
+  ],
+  [
+    "proposal for a bad agent slug",
+    { ...baseRun, knowledge: { improvement_proposals: [{ title: "P", target_agent: "Mail" }] } },
+  ],
+  ["knowledge that is an array", { ...baseRun, knowledge: [] }],
   ["metric name with capitals", { ...baseRun, metrics: { Processed: 1 } }],
   ["metric that is a string", { ...baseRun, metrics: { processed: "41" } }],
   ["bad feedback id", { ...baseRun, feedback_consumed: ["fb-123"] }],

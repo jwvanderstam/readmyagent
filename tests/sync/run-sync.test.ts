@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { Db } from "@/lib/db";
@@ -16,11 +18,12 @@ class FakeDrive implements RunFileSource, FeedbackFileWriter {
   failList = false;
   written: string[] = [];
 
-  add(name: string, content: unknown, modified = "2026-11-18T06:00:00Z") {
+  add(name: string, content: unknown, modified = "2026-11-18T06:00:00Z", id = `id-${name}`) {
     this.files.push({
-      id: `id-${name}`,
+      id,
       name,
       modifiedTime: new Date(modified),
+      createdTime: new Date(modified),
       size: null,
       content: typeof content === "string" ? content : JSON.stringify(content),
     });
@@ -104,9 +107,15 @@ describe("runSync", () => {
   });
 
   it("lists from one day before the last successful sync", async () => {
-    await sync();
-    await sync();
+    await sync("cron");
+    await sync("cron");
     expect(drive.listedSince).toEqual([null, new Date("2026-11-17T12:00:00Z")]);
+  });
+
+  it("lists the whole folder on a manual sync, so older files are backfilled", async () => {
+    await sync("cron");
+    await sync("manual");
+    expect(drive.listedSince).toEqual([null, null]);
   });
 
   it("continues after an invalid file or a failed download and reports partial", async () => {
@@ -199,5 +208,118 @@ describe("syncIfStale", () => {
     await db.insert(syncRuns).values({ trigger: "cron", startedAt: NOW });
     const later = () => new Date(NOW.getTime() + 6 * 60_000);
     expect(await syncIfStale(db, deps(), later)).toEqual({ status: "skipped" });
+  });
+});
+
+describe("runSync with Markdown run files (ADR-0012)", () => {
+  const md = (name: string) =>
+    readFileSync(join(import.meta.dirname, "..", "fixtures", "markdown", name), "utf8");
+
+  it("ingests Markdown runs, registers their agents and ignores other files", async () => {
+    drive.add("mail-triage-run-2026-11-28-0648.md", md("mail-triage-run-2026-11-28-0648.md"));
+    drive.add("localchat-wachter-run-2026-11-28.md", md("localchat-wachter-run-2026-11-28.md"));
+    drive.add("weekbrief-run-2026-w48.md", md("weekbrief-run-2026-w48.md"), "2026-11-27T11:52:16Z");
+    drive.add("mail-triage-state.md", "# state");
+    drive.add("mail-triage-log.md", "# legacy");
+    drive.add("feedback.json", { contract_version: "1.0", generated_at: NOW, entries: [] });
+
+    const result = await sync();
+
+    expect(result).toMatchObject({ status: "ok", filesSeen: 3, runsIngested: 3, errors: 0 });
+    const registered = await db.select().from(agents).orderBy(agents.slug);
+    expect(registered.map((a) => [a.slug, a.schedule])).toEqual([
+      ["localchat-wachter", "CRON_TZ=Europe/Amsterdam 45 7 * * *"],
+      ["mail-triage", "CRON_TZ=Europe/Amsterdam 48 6 * * *"],
+      ["test-agent", "0 7 * * *"],
+      ["weekbrief", "CRON_TZ=Europe/Amsterdam 50 12 * * 5"],
+    ]);
+    const [mail] = await db.select().from(runs).where(eq(runs.agentSlug, "mail-triage"));
+    expect(mail).toMatchObject({
+      runId: "mail-triage-run-2026-11-28-0648",
+      source: "markdown",
+      parseStatus: "ok",
+      contractVersion: "markdown",
+      driveFileId: "id-mail-triage-run-2026-11-28-0648.md",
+      logFileId: "id-mail-triage-run-2026-11-28-0648.md",
+      startedAt: new Date("2026-11-28T05:48:00Z"),
+      metrics: { kennis: 0, archief: 0, proposed_delete: 2, doubt: 11, processed: 13 },
+      markdown: md("mail-triage-run-2026-11-28-0648.md"),
+    });
+    expect(await db.select().from(ingestErrors)).toEqual([]);
+  });
+
+  it("keeps two logs with the same name, ordered by createdTime, and is idempotent", async () => {
+    const name = "localchat-wachter-run-2026-11-27.md";
+    drive.add(name, md("localchat-wachter-run-2026-11-28.md"), "2026-11-27T06:51:41Z", "morning");
+    drive.add(name, md("localchat-wachter-run-2026-11-28.md"), "2026-11-27T17:01:16Z", "evening");
+
+    await sync();
+    const second = await sync();
+
+    expect(second).toMatchObject({ filesSeen: 2, runsIngested: 0 });
+    const rows = await db
+      .select()
+      .from(runs)
+      .where(eq(runs.agentSlug, "localchat-wachter"))
+      .orderBy(runs.startedAt);
+    expect(rows.map((r) => [r.driveFileId, r.runId])).toEqual([
+      ["morning", "localchat-wachter-run-2026-11-27"],
+      ["evening", "localchat-wachter-run-2026-11-27-2"],
+    ]);
+  });
+
+  it("stores a run it cannot fully read as partial", async () => {
+    drive.add("localchat-wachter-run-2026-11-20.md", md("localchat-wachter-run-2026-11-20.md"));
+    drive.add("mail-triage-run-2026-11-21-0648.md", "");
+    const result = await sync();
+    expect(result).toMatchObject({ status: "ok", runsIngested: 2 });
+    const rows = await db.select().from(runs);
+    expect(rows.map((r) => r.parseStatus)).toEqual(["partial", "partial"]);
+  });
+
+  const mailJson = (logFile: string) => ({
+    contract_version: "1.2",
+    agent: "mail-triage",
+    run_id: "mail-triage-2026-11-28-0648",
+    started_at: "2026-11-28T06:48:00+01:00",
+    finished_at: "2026-11-28T06:49:08+01:00",
+    status: "ok",
+    summary: "From JSON.",
+    items: [],
+    verification: { iterations: 1, result: "ok" },
+    feedback_consumed: [],
+    log_file: logFile,
+    schedule: "CRON_TZ=Europe/Amsterdam 48 6 * * *",
+  });
+
+  it("lets JSON win and links the Markdown log when both arrive together", async () => {
+    const log = "mail-triage-run-2026-11-28-0648.md";
+    drive.add(log, md(log));
+    drive.add("mail-triage-run-2026-11-28-0648.json", mailJson(log));
+
+    const result = await sync();
+
+    expect(result).toMatchObject({ status: "ok", filesSeen: 2, runsIngested: 1 });
+    const rows = await db.select().from(runs);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      source: "json",
+      summary: "From JSON.",
+      logFileId: `id-${log}`,
+    });
+  });
+
+  it("replaces a Markdown run when its JSON arrives later, keeping the link", async () => {
+    const log = "mail-triage-run-2026-11-28-0648.md";
+    drive.add(log, md(log));
+    await sync();
+    drive.add("mail-triage-run-2026-11-28-0648.json", mailJson(log));
+    drive.files = drive.files.filter((f) => f.name !== log); // outside the listing window now
+
+    await sync();
+
+    const rows = await db.select().from(runs);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ source: "json", logFileId: `id-${log}` });
   });
 });

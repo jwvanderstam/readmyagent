@@ -35,16 +35,19 @@ Drivers: production uses the Neon serverless driver over WebSockets (`lib/db/cli
 | `run_id` | text | From file; unique per agent |
 | `drive_file_id` | text UNIQUE | Idempotency key |
 | `log_file_id` | text null | Drive ID of the Markdown log, resolved by name |
-| `contract_version` | text | |
+| `contract_version` | text | `markdown` for Markdown runs |
 | `started_at`, `finished_at` | timestamptz | |
 | `status` | enum `ok`, `warning`, `failed` | |
 | `summary` | text | |
 | `metrics` | jsonb | |
 | `verification` | jsonb | |
-| `raw` | jsonb | Full original document, for re-processing |
+| `raw` | jsonb | Full original document, for re-processing. Markdown runs: file name, extracted fields, parse notes |
 | `ingested_at` | timestamptz | |
+| `source` | enum `json`, `markdown` | Where the run came from (ADR-0012) |
+| `markdown` | text null | Full Markdown log of a Markdown run |
+| `parse_status` | enum `ok`, `partial` null | How well a Markdown run could be read; null for JSON runs |
 
-Unique: `(agent_slug, run_id)`.
+Unique: `(agent_slug, run_id)`. A Markdown run's `run_id` is its file name without `.md`; a second log with the same name gets `-2`, `-3`, and so on.
 
 ### items
 

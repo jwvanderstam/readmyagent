@@ -1,6 +1,6 @@
 # Agent contract
 
-Version 1.1. This document defines what an agent writes and reads so that readmyagent can process it. The JSON Schemas in [`/schemas`](../schemas) are the normative source; this document explains them.
+Version 1.2. This document defines what an agent writes and reads so that readmyagent can process it. The JSON Schemas in [`/schemas`](../schemas) are the normative source; this document explains them.
 
 ## 1. Overview
 
@@ -9,6 +9,8 @@ Version 1.1. This document defines what an agent writes and reads so that readmy
 | Agent to reader | `<agent>-run-<YYYY-MM-DD>-<HHMM>.json` | Agent, one new file per run | readmyagent |
 | Agent to human | `<agent>-run-<YYYY-MM-DD>-<HHMM>.md` | Agent, one new file per run | Owner (linked from the reader) |
 | Reader to agent | `feedback.json` | readmyagent (updates in place) | Agents, at the start of each run |
+
+The JSON run file takes the name of the Markdown log with `.json` instead of `.md`, so agents whose log names have no time (`localchat-wachter-run-<YYYY-MM-DD>.md`, `weekbrief-run-<YYYY>-w<WW>.md`) keep them. Agents only create files, never update them, and use MIME type `application/json`. The instructions to paste into an agent prompt are in [contracts/agent-instructions.md](contracts/agent-instructions.md).
 
 All files live in the shared Drive folder `Claude-agents`. Timestamps in file names are Europe/Amsterdam local time; timestamps inside files are ISO 8601 with offset.
 
@@ -59,7 +61,7 @@ Schema: [`schemas/agent-run.schema.json`](../schemas/agent-run.schema.json)
 
 | Field | Required | Meaning |
 |---|---|---|
-| `contract_version` | yes | Contract version the file follows. Currently `1.1`; `1.0` files stay valid. |
+| `contract_version` | yes | Contract version the file follows. Currently `1.2`; `1.0` and `1.1` files stay valid. |
 | `agent` | yes | Agent slug, lowercase kebab case. Must match a registered agent, unless the file declares `schedule`. |
 | `agent_name` | no (1.1) | Display name of the agent, max 100 characters. The reader shows it and updates it from the newest run. Without it, a self-registered agent is named after its slug. |
 | `schedule` | no (1.1) | Cron expression of the scheduled task, with `CRON_TZ=<zone>` in front for its timezone, max 200 characters. At most hourly. Lets the reader register an unknown agent and keep its schedule current (ADR-0009). Write the same schedule the task runs on. |
@@ -71,7 +73,8 @@ Schema: [`schemas/agent-run.schema.json`](../schemas/agent-run.schema.json)
 | `items` | yes | Findings that may need attention. Empty array when there are none. Max 200. |
 | `verification` | yes | Result of the agent's own verification loop. |
 | `feedback_consumed` | yes | IDs from `feedback.json` that this run applied. Empty array when none. |
-| `log_file` | no | File name of the Markdown log written in the same run. |
+| `log_file` | no | File name of the Markdown log written in the same run. Strongly recommended: it links the log, and it makes this JSON replace a Markdown run already ingested from that log (ADR-0012). |
+| `knowledge` | no (1.2) | Knowledge section of a briefing: `trends` (each with required `title`, `summary`, `sources`, `relevance_for_owner`), `signals`, `actions`, `improvement_proposals`. Field table in [contracts/agent-instructions.md](contracts/agent-instructions.md). Stored with the run. |
 
 ### 2.3 Items
 
@@ -153,6 +156,7 @@ Every type except `rule` refers to an item and carries its fingerprint in `targe
 - A fingerprint that appears twice in one run counts as one item; the last occurrence wins.
 - A finding seen again links to the existing item. Its content follows the most recent run by `started_at`, also when files arrive out of order. An item marked `done` reopens when it reappears; `acknowledged` and `dismissed` stay.
 - `feedback_consumed` marks feedback consumed only when it was published and addressed to the same agent. Other IDs are ignored.
+- Markdown fallback (ADR-0012): a Markdown log named `mail-triage-run-<YYYY-MM-DD>-<HHMM>.md`, `localchat-wachter-run-<YYYY-MM-DD>.md` or `weekbrief-run-<YYYY>-w<WW>.md` becomes a run when no JSON run names it in `log_file`. It has no items and consumes no feedback. A JSON run that names it later replaces it.
 
 ## 5. Versioning
 

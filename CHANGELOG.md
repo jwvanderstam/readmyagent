@@ -4,6 +4,20 @@ All notable changes to this project are documented here. Format: [Keep a Changel
 
 ## [Unreleased]
 
+### Added
+
+- Markdown fallback ingest (ADR-0012): Markdown run logs of mail-triage, localchat-wachter and weekbrief become runs when no JSON run file exists. Agent and time come from the file name (Europe/Amsterdam) and the Drive creation time. The full log is stored and shown on the run page, rendered sanitized. Mail-triage counts become metrics and the four wachter header lines are shown as fields. A log that cannot be fully read is stored as `partial`, never dropped. Two logs with the same name are both kept. A JSON run that names the log in `log_file` wins and keeps the log linked. Migration `0001_markdown_runs` adds `runs.source`, `runs.markdown` and `runs.parse_status`.
+- Agent contract 1.2: optional `knowledge` section for briefings (trends, signals, actions, improvement proposals).
+- `docs/contracts/agent-instructions.md`: the output contract as a block to paste into an agent prompt, with the schema and a valid example per agent. Tests check that the examples validate and the embedded schema is current.
+
+### Changed
+
+- A manual sync lists the whole Drive folder instead of the files changed since the last sync, so older files are backfilled. Cron and on-open syncs stay incremental.
+
+### Fixed
+
+- No runs were shown because the agents write only Markdown logs and the sync ingested only JSON files.
+
 ## [0.1.0] - 2026-11-20
 
 First release: the phase 1 agent loop. Instances update by merging release tags (operations, section 6).

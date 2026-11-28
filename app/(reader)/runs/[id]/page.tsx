@@ -28,6 +28,15 @@ export default async function RunPage({ params }: Props) {
     notes?: unknown;
   };
   const metrics = Object.entries(run.metrics ?? {}).filter(([, v]) => typeof v === "number");
+  const fromMarkdown = run.source === "markdown";
+  // Set by the Markdown ingest (ADR-0012): extracted text fields and what could not be read.
+  const raw = run.raw as { fields?: unknown; parse_notes?: unknown };
+  const fields = Object.entries(
+    fromMarkdown && typeof raw.fields === "object" && raw.fields !== null ? raw.fields : {},
+  ).filter((e): e is [string, string] => typeof e[1] === "string");
+  const parseNotes = Array.isArray(raw.parse_notes)
+    ? raw.parse_notes.filter((n): n is string => typeof n === "string")
+    : [];
 
   return (
     <article className="py-4">
@@ -45,7 +54,20 @@ export default async function RunPage({ params }: Props) {
         </div>
         <p className="mt-1 text-sm break-all text-neutral-600">
           {run.runId} · finished {formatDateTime(run.finishedAt, timezone)}
+          {fromMarkdown && " · read from the Markdown log"}
         </p>
+        {run.parseStatus === "partial" && (
+          <div className="mt-2 rounded border border-amber-300 bg-amber-50 p-2 text-sm">
+            <p>Parts of this log could not be read. The full log is shown below.</p>
+            {parseNotes.length > 0 && (
+              <ul className="mt-1 ml-5 list-disc">
+                {parseNotes.map((note) => (
+                  <li key={note}>{note}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
       </header>
 
       <section className="mt-4">
@@ -53,22 +75,40 @@ export default async function RunPage({ params }: Props) {
         <SafeMarkdown>{run.summary}</SafeMarkdown>
       </section>
 
-      <section className="mt-6 text-sm">
-        <h2 className="font-semibold">Verification</h2>
-        <p className="mt-1">
-          {typeof verification.result === "string" && <StatusBadge status={verification.result} />}
-          {typeof verification.iterations === "number" && (
-            <span className="ml-2 text-neutral-600">
-              {verification.iterations} iteration{verification.iterations === 1 ? "" : "s"}
-            </span>
+      {fields.length > 0 && (
+        <section className="mt-6 text-sm">
+          <h2 className="font-semibold">Fields</h2>
+          <dl className="mt-1 grid grid-cols-[auto_1fr] gap-x-4 gap-y-0.5">
+            {fields.map(([name, value]) => (
+              <div key={name} className="contents">
+                <dt className="text-neutral-600">{name.replaceAll("_", " ")}</dt>
+                <dd className="break-words">{value}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      )}
+
+      {!fromMarkdown && (
+        <section className="mt-6 text-sm">
+          <h2 className="font-semibold">Verification</h2>
+          <p className="mt-1">
+            {typeof verification.result === "string" && (
+              <StatusBadge status={verification.result} />
+            )}
+            {typeof verification.iterations === "number" && (
+              <span className="ml-2 text-neutral-600">
+                {verification.iterations} iteration{verification.iterations === 1 ? "" : "s"}
+              </span>
+            )}
+          </p>
+          {typeof verification.notes === "string" && (
+            <div className="mt-1">
+              <SafeMarkdown>{verification.notes}</SafeMarkdown>
+            </div>
           )}
-        </p>
-        {typeof verification.notes === "string" && (
-          <div className="mt-1">
-            <SafeMarkdown>{verification.notes}</SafeMarkdown>
-          </div>
-        )}
-      </section>
+        </section>
+      )}
 
       {metrics.length > 0 && (
         <section className="mt-6 text-sm">
@@ -127,6 +167,15 @@ export default async function RunPage({ params }: Props) {
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {run.markdown !== null && (
+        <section className="mt-6">
+          <h2 className="text-sm font-semibold">Log</h2>
+          <div className="mt-2 rounded border border-neutral-200 p-3 text-sm">
+            <SafeMarkdown>{run.markdown}</SafeMarkdown>
+          </div>
         </section>
       )}
 

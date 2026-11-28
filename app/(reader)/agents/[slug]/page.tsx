@@ -141,7 +141,9 @@ export default async function AgentPage({ params }: Props) {
                     <span className="font-medium">{formatDateTime(run.startedAt, timezone)}</span>
                     <StatusBadge status={run.status} />
                     <span className="text-neutral-600">
-                      {run.itemCount} item{run.itemCount === 1 ? "" : "s"}
+                      {run.source === "markdown"
+                        ? `Markdown log${run.parseStatus === "partial" ? ", partly read" : ""}`
+                        : `${run.itemCount} item${run.itemCount === 1 ? "" : "s"}`}
                     </span>
                   </div>
                   <p className="mt-0.5 line-clamp-2 text-sm break-words text-neutral-700">
